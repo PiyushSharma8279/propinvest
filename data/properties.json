@@ -1,0 +1,287 @@
+[
+  {
+    "id": "1",
+    "slug": "skyline-arte-sector-150-noida",
+    "title": "Skyline Arte",
+    "builder": "Skyline Group",
+    "city": "Noida",
+    "locality": "Sector 150",
+    "state": "Uttar Pradesh",
+    "category": "Residential",
+    "propertyType": "Residential Apartment",
+    "configurations": [
+      "3 BHK",
+      "4 BHK"
+    ],
+    "priceMin": 34700000,
+    "priceMax": 77700000,
+    "priceDisplay": "₹3.47 Cr - 7.77 Cr",
+    "areaMin": 1450,
+    "areaMax": 2650,
+    "areaUnit": "sq.ft.",
+    "status": "New Launch",
+    "possessionDate": "2031-02-01",
+    "possessionDisplay": "Feb 2031",
+    "reraRegistered": true,
+    "reraNumber": "UPRERAPRJ123456",
+    "featured": true,
+    "description": "Spacious 3 and 4 BHK apartments in Sector 150, Noida's greenest and most well-planned residential sector. Skyline Arte offers low-density living with over 75% open green area, a golf-course facing clubhouse, and direct connectivity to the Noida Expressway.",
+    "usps": [
+      "Prime connectivity to Delhi and Greater Noida via Noida Expressway",
+      "Located in Noida's greenest sector with 75% open area",
+      "Modern clubhouse with swimming pool and mini theatre"
+    ],
+    "amenities": [
+      "Clubhouse",
+      "Swimming Pool",
+      "Gymnasium",
+      "24x7 Security",
+      "Landscaped Gardens",
+      "Kids Play Area",
+      "Jogging Track",
+      "Multipurpose Hall"
+    ],
+    "images": [
+      "/images/properties/building-1.svg",
+      "/images/properties/amenity-1.svg"
+    ],
+    "phone": "+919810000001",
+    "whatsapp": "918445561749"
+  },
+  {
+    "id": "2",
+    "slug": "ivory-county-sector-115-noida",
+    "title": "Ivory County",
+    "builder": "Ivory Realty",
+    "city": "Noida",
+    "locality": "Sector 115",
+    "state": "Uttar Pradesh",
+    "category": "Residential",
+    "propertyType": "Residential Apartment",
+    "configurations": [
+      "3 BHK",
+      "4 BHK",
+      "5 BHK"
+    ],
+    "priceMin": 40700000,
+    "priceMax": 156100000,
+    "priceDisplay": "₹4.07 Cr - 15.61 Cr",
+    "areaMin": 1680,
+    "areaMax": 4200,
+    "areaUnit": "sq.ft.",
+    "status": "Under Construction",
+    "possessionDate": "2028-07-01",
+    "possessionDisplay": "Jul 2028",
+    "reraRegistered": true,
+    "reraNumber": "UPRERAPRJ223456",
+    "featured": true,
+    "description": "Finest 3, 4 and 5 BHK residences in Sector 115, Noida. Ivory County is designed around a premium clubhouse with resort-style amenities and a grand triple-height entrance lobby.",
+    "usps": [
+      "Premium clubhouse design with leisure and sports facilities",
+      "Grand triple-height entrance lobby",
+      "Temperature-controlled indoor swimming pool"
+    ],
+    "amenities": [
+      "Clubhouse",
+      "Indoor Pool",
+      "Gymnasium",
+      "Spa",
+      "24x7 Security",
+      "Concierge",
+      "Home Theatre",
+      "Banquet Hall"
+    ],
+    "images": [
+      "/images/properties/building-2.svg",
+      "/images/properties/amenity-2.svg"
+    ],
+    "phone": "+919810000002",
+    "whatsapp": "919810000002"
+  },
+  {
+    "id": "3",
+    "slug": "M3M-sector-97-noida",
+    "title": "Jacob & Co. Residences",
+    "builder": "M3M",
+    "city": "Noida",
+    "locality": "Sector 97",
+    "state": "Uttar Pradesh",
+    "category": "Commercial",
+    "propertyType": "Commercial Apartment",
+    "configurations": [
+      "3 BHK",
+      "4 BHK",
+      "5 BHK"
+    ],
+    "priceMin": 80000000,
+    "priceMax": 200000000,
+    "priceDisplay": "₹8 Cr - 20 Cr",
+    "areaMin": 2500,
+    "areaMax": 6500,
+    "areaUnit": "sq.ft.",
+    "status": "Under Construction",
+    "possessionDate": "2030-05-01",
+    "possessionDisplay": "May 2030",
+    "reraRegistered": true,
+    "reraNumber": "UPRERAPRJ323456",
+    "featured": true,
+    "description": "Under Construction  3 and 4 BHK homes in Sector 97, Noida, close to the Noida-Greater Noida Expressway. Ideal for end-users looking for immediate possession with no waiting period.",
+    "usps": [
+      "2 minutes from Noida-Greater Noida Expressway",
+      "Gated community with 24x7 power backup"
+    ],
+    "amenities": [
+      "Clubhouse",
+      "Gymnasium",
+      "24x7 Security",
+      "Power Backup",
+      "Children's Park",
+      "Community Hall"
+    ],
+    "images": [
+      "/images/properties/MwNcLJDVv65TUCmbwg6mw6cMsTw.webp",
+      "/Images/properties/m3mjewelcrest3-hero.webp"
+    ],
+    "phone": "+918059668234",
+    "whatsapp": "918059668234"
+  },
+  {
+    "id": "4",
+    "slug": "orchid-heights-sector-89-gurugram",
+    "title": "Orchid Heights",
+    "builder": "Orchid Developers",
+    "city": "Gurugram",
+    "locality": "Sector 89",
+    "state": "Haryana",
+    "category": "Residential",
+    "propertyType": "Residential Apartment",
+    "configurations": [
+      "3 BHK",
+      "4 BHK"
+    ],
+    "priceMin": 21000000,
+    "priceMax": 42000000,
+    "priceDisplay": "₹2.1 Cr - 4.2 Cr",
+    "areaMin": 1350,
+    "areaMax": 2400,
+    "areaUnit": "sq.ft.",
+    "status": "New Launch",
+    "possessionDate": "2030-06-01",
+    "possessionDisplay": "Jun 2030",
+    "reraRegistered": true,
+    "reraNumber": "HRRERAPRJ423456",
+    "featured": false,
+    "description": "Orchid Heights brings low-rise luxury living to Sector 89, Gurugram, with wide balconies, double-height lobbies, and a wellness-focused clubhouse.",
+    "usps": [
+      "Low-density, low-rise living with wide balconies",
+      "Wellness-focused clubhouse with yoga deck",
+      "10 minutes from Dwarka Expressway"
+    ],
+    "amenities": [
+      "Clubhouse",
+      "Yoga Deck",
+      "Swimming Pool",
+      "Gymnasium",
+      "24x7 Security",
+      "EV Charging"
+    ],
+    "images": [
+      "/images/properties/building-4.svg",
+      "/images/properties/amenity-2.svg"
+    ],
+    "phone": "+919810000004",
+    "whatsapp": "919810000004"
+  },
+  {
+    "id": "5",
+    "slug": "riverfront-residency-sector-16c-greater-noida",
+    "title": "Riverfront Residency",
+    "builder": "Riverfront Group",
+    "city": "Greater Noida",
+    "locality": "Sector 16C",
+    "state": "Uttar Pradesh",
+    "category": "Residential",
+    "propertyType": "Residential Apartment",
+    "configurations": [
+      "2 BHK",
+      "3 BHK"
+    ],
+    "priceMin": 6200000,
+    "priceMax": 11500000,
+    "priceDisplay": "₹62 Lac - 1.15 Cr",
+    "areaMin": 890,
+    "areaMax": 1420,
+    "areaUnit": "sq.ft.",
+    "status": "Under Construction",
+    "possessionDate": "2027-03-01",
+    "possessionDisplay": "Mar 2027",
+    "reraRegistered": true,
+    "reraNumber": "UPRERAPRJ523456",
+    "featured": false,
+    "description": "Affordable and spacious 2 and 3 BHK homes near the Yamuna Expressway, close to the upcoming Noida International Airport at Jewar.",
+    "usps": [
+      "Close to upcoming Noida International Airport, Jewar",
+      "Direct access to Yamuna Expressway",
+      "Flexible payment plans available"
+    ],
+    "amenities": [
+      "Clubhouse",
+      "Gymnasium",
+      "24x7 Security",
+      "Landscaped Gardens",
+      "Kids Play Area"
+    ],
+    "images": [
+      "/images/properties/building-1.svg",
+      "/images/properties/amenity-1.svg"
+    ],
+    "phone": "+919810000005",
+    "whatsapp": "919810000005"
+  },
+  {
+    "id": "6",
+    "slug": "urban-square-sector-63-noida",
+    "title": "Urban Square",
+    "builder": "Urban Nest",
+    "city": "Noida",
+    "locality": "Sector 63",
+    "state": "Uttar Pradesh",
+    "category": "Residential",
+    "propertyType": "Residential Apartment",
+    "configurations": [
+      "1 BHK",
+      "2 BHK",
+      "3 BHK"
+    ],
+    "priceMin": 4500000,
+    "priceMax": 9800000,
+    "priceDisplay": "₹45 Lac - 98 Lac",
+    "areaMin": 550,
+    "areaMax": 1250,
+    "areaUnit": "sq.ft.",
+    "status": "Ready to Move",
+    "possessionDate": "2025-01-01",
+    "possessionDisplay": "Ready to Move",
+    "reraRegistered": true,
+    "reraNumber": "UPRERAPRJ623456",
+    "featured": false,
+    "description": "Compact and efficient 1, 2 and 3 BHK homes in the established industrial and residential hub of Sector 63, Noida. Well connected to the Noida-Greater Noida Expressway and Botanical Garden metro station.",
+    "usps": [
+      "10 minute walk from Botanical Garden metro station",
+      "Established neighbourhood with schools and hospitals nearby",
+      "Lowest entry price in this comparison set"
+    ],
+    "amenities": [
+      "24x7 Security",
+      "Power Backup",
+      "Community Hall",
+      "Children's Park"
+    ],
+    "images": [
+      "/images/properties/building-2.svg",
+      "/images/properties/amenity-2.svg"
+    ],
+    "phone": "+919810000006",
+    "whatsapp": "919810000006"
+  }
+]

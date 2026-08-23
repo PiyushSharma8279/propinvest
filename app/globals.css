@@ -1,0 +1,103 @@
+@import "tailwindcss";
+
+:root {
+  --pi-teal-900: #0b3b36;
+  --pi-teal-700: #0f4f47;
+  --pi-teal-600: #146b5f;
+  --pi-teal-100: #dfeae7;
+  --pi-gold-600: #c9973e;
+  --pi-gold-100: #f5e8cd;
+  --pi-rust-600: #a85c3b;
+  --pi-cream: #f7f5f0;
+  --pi-cream-200: #efeae0;
+  --pi-ink-900: #1c2321;
+  --pi-slate-600: #5b6764;
+  --pi-slate-300: #a9b3af;
+  --pi-border: #dfdbd0;
+
+  --font-display: "Fraunces", Georgia, serif;
+  --font-body: "Inter", system-ui, sans-serif;
+}
+
+@theme inline {
+  --color-teal-900: var(--pi-teal-900);
+  --color-teal-700: var(--pi-teal-700);
+  --color-teal-600: var(--pi-teal-600);
+  --color-teal-100: var(--pi-teal-100);
+  --color-gold-600: var(--pi-gold-600);
+  --color-gold-100: var(--pi-gold-100);
+  --color-rust-600: var(--pi-rust-600);
+  --color-cream: var(--pi-cream);
+  --color-cream-200: var(--pi-cream-200);
+  --color-ink-900: var(--pi-ink-900);
+  --color-slate-600: var(--pi-slate-600);
+  --color-slate-300: var(--pi-slate-300);
+  --color-border: var(--pi-border);
+
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--pi-cream);
+  color: var(--pi-ink-900);
+  font-family: var(--font-body), system-ui, sans-serif;
+}
+
+h1, h2, h3, h4, .font-display {
+  font-family: var(--font-display), Georgia, serif;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Visible keyboard focus everywhere */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--pi-gold-600);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* RERA verification stamp - signature element */
+.rera-stamp {
+  --stamp-size: 46px;
+  position: relative;
+  width: var(--stamp-size);
+  height: var(--stamp-size);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--pi-teal-900);
+  color: var(--pi-cream);
+  box-shadow: 0 0 0 2px var(--pi-cream), 0 0 0 3px var(--pi-teal-900);
+}
+
+.rera-stamp::before {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  background: repeating-conic-gradient(
+    var(--pi-teal-900) 0deg 9deg,
+    transparent 9deg 18deg
+  );
+  z-index: -1;
+}
