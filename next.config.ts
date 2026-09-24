@@ -1,16 +1,29 @@
 import type { NextConfig } from "next";
 
+/** Allows next/image to load from ImageKit, including a custom URL endpoint domain. */
+function imagekitPatterns() {
+  const patterns: { protocol: "https"; hostname: string }[] = [
+    { protocol: "https", hostname: "ik.imagekit.io" },
+  ];
+  const endpoint = process.env.IMAGEKIT_URL_ENDPOINT ?? process.env.IMAGE_KIT_URL_ENDPOINT;
+  if (endpoint) {
+    try {
+      const { hostname } = new URL(endpoint);
+      if (hostname !== "ik.imagekit.io") patterns.push({ protocol: "https", hostname });
+    } catch {
+      // Ignore a malformed endpoint; uploads will surface the error.
+    }
+  }
+  return patterns;
+}
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   compress: true,
 
   images: {
-    // Local placeholder illustrations live under /public/images/properties.
-    // Add your real photo host(s) here when you switch to real listing photos,
-    // e.g. an AWS S3 bucket or CDN:
-    // remotePatterns: [
-    //   { protocol: "https", hostname: "your-bucket.s3.ap-south-1.amazonaws.com" },
-    // ],
+    // Images uploaded from the admin panel are stored on ImageKit.
+    remotePatterns: imagekitPatterns(),
     formats: ["image/webp"],
   },
 

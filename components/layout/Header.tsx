@@ -1,0 +1,135 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { LayoutDashboard, Menu, UserRound, X } from "lucide-react";
+import SignOutButton from "@/components/auth/SignOutButton";
+import WhatsAppButton from "@/components/property/WhatsAppButton";
+import { siteConfig } from "@/lib/site-config";
+import type { SessionUser } from "@/lib/types";
+import Logo from "./Logo";
+
+const navLinks = [
+  { href: "/projects?category=Residential", label: "Residential" },
+  { href: "/projects?category=Commercial", label: "Commercial" },
+  { href: "/projects?category=Plot", label: "Plots" },
+  { href: "/about", label: "About" },
+  { href: "/#contact", label: "Contact" },
+];
+
+/**
+ * Client component so public pages stay statically generated: the signed-in user is
+ * fetched from /api/auth/me in the browser instead of reading cookies on the server.
+ */
+function useSessionUser() {
+  const pathname = usePathname();
+  const [user, setUser] = useState<SessionUser | null | undefined>(undefined);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/auth/me")
+      .then((res) => (res.ok ? res.json() : { user: null }))
+      .then((data: { user: SessionUser | null }) => {
+        if (!cancelled) setUser(data.user);
+      })
+      .catch(() => {
+        if (!cancelled) setUser(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
+
+  return user;
+}
+
+function AccountLinks({ user, mobile = false }: { user: SessionUser | null | undefined; mobile?: boolean }) {
+  const linkClass = mobile
+    ? "flex items-center gap-2 py-1 text-cream/90"
+    : "inline-flex items-center gap-1 text-cream/90 transition hover:text-gold-600";
+
+  // No public sign-in link: visitors don't have accounts. Admins go to /login directly.
+  if (!user) return null;
+  return (
+    <>
+      {user.role === "admin" ? (
+        <Link href="/admin" className={linkClass}>
+          <LayoutDashboard className="h-4 w-4" aria-hidden="true" /> Admin
+        </Link>
+      ) : (
+        <Link href="/account" className={linkClass}>
+          <UserRound className="h-4 w-4" aria-hidden="true" /> {user.name.split(" ")[0]}
+        </Link>
+      )}
+      <SignOutButton className={linkClass} />
+    </>
+  );
+}
+
+export default function Header() {
+  const [open, setOpen] = useState(false);
+  const user = useSessionUser();
+
+  return (
+    <header className="sticky top-0 z-50 border-b border-teal-900/10 bg-gradient-to-r from-teal-900 to-teal-700 text-cream">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+        <Link href="/" className="shrink-0">
+          <Logo />
+        </Link>
+
+        <nav className="hidden items-center gap-5 text-sm font-medium lg:flex">
+          {navLinks.map((link) => (
+            <Link key={link.href} href={link.href} className="text-cream/90 transition hover:text-gold-600">
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="hidden items-center gap-4 text-sm font-medium lg:flex">
+          <AccountLinks user={user} />
+          <WhatsAppButton
+            whatsapp={siteConfig.contact.whatsapp}
+            projectTitle={siteConfig.name}
+            label="Talk to an Expert"
+          />
+        </div>
+
+        <button
+          type="button"
+          className="grid h-9 w-9 place-items-center rounded-md text-cream lg:hidden"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          aria-label={open ? "Close menu" : "Open menu"}
+        >
+          {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        </button>
+      </div>
+
+      {open && (
+        <div className="border-t border-cream/10 bg-teal-900 px-4 py-4 lg:hidden">
+          <nav className="flex flex-col gap-3 text-sm font-medium" onClick={() => setOpen(false)}>
+            {navLinks.map((link) => (
+              <Link key={link.href} href={link.href} className="py-1 text-cream/90">
+                {link.label}
+              </Link>
+            ))}
+            {user && (
+              <div className="flex flex-col gap-3 border-t border-cream/10 pt-3">
+                <AccountLinks user={user} mobile />
+              </div>
+            )}
+          </nav>
+          <div className="mt-4">
+            <WhatsAppButton
+              whatsapp={siteConfig.contact.whatsapp}
+              projectTitle={siteConfig.name}
+              label="Talk to an Expert"
+              fullWidth
+            />
+          </div>
+        </div>
+      )}
+    </header>
+  );
+}

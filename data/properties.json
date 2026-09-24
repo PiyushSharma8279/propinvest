@@ -8,7 +8,7 @@
     "locality": "Sector 150",
     "state": "Uttar Pradesh",
     "category": "Residential",
-    "propertyType": "Residential Apartment",
+    "propertyType": "Apartment",
     "configurations": [
       "3 BHK",
       "4 BHK"
@@ -46,7 +46,11 @@
       "/images/properties/amenity-1.svg"
     ],
     "phone": "+919810000001",
-    "whatsapp": "918445561749"
+    "whatsapp": "918445561749",
+    "address": "Near Noida Expressway",
+    "pincode": "201310",
+    "latitude": 28.4089,
+    "longitude": 77.4152
   },
   {
     "id": "2",
@@ -57,7 +61,7 @@
     "locality": "Sector 115",
     "state": "Uttar Pradesh",
     "category": "Residential",
-    "propertyType": "Residential Apartment",
+    "propertyType": "Apartment",
     "configurations": [
       "3 BHK",
       "4 BHK",
@@ -107,7 +111,7 @@
     "locality": "Sector 97",
     "state": "Uttar Pradesh",
     "category": "Commercial",
-    "propertyType": "Commercial Apartment",
+    "propertyType": "Serviced Apartment",
     "configurations": [
       "3 BHK",
       "4 BHK",
@@ -140,7 +144,7 @@
     ],
     "images": [
       "/images/properties/MwNcLJDVv65TUCmbwg6mw6cMsTw.webp",
-      "/Images/properties/m3mjewelcrest3-hero.webp"
+      "/images/properties/m3mjewelcrest3-hero.webp"
     ],
     "phone": "+918059668234",
     "whatsapp": "918059668234"
@@ -154,7 +158,7 @@
     "locality": "Sector 89",
     "state": "Haryana",
     "category": "Residential",
-    "propertyType": "Residential Apartment",
+    "propertyType": "Apartment",
     "configurations": [
       "3 BHK",
       "4 BHK"
@@ -201,7 +205,7 @@
     "locality": "Sector 16C",
     "state": "Uttar Pradesh",
     "category": "Residential",
-    "propertyType": "Residential Apartment",
+    "propertyType": "Apartment",
     "configurations": [
       "2 BHK",
       "3 BHK"
@@ -247,7 +251,7 @@
     "locality": "Sector 63",
     "state": "Uttar Pradesh",
     "category": "Residential",
-    "propertyType": "Residential Apartment",
+    "propertyType": "Apartment",
     "configurations": [
       "1 BHK",
       "2 BHK",

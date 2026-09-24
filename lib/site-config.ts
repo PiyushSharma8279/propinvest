@@ -1,9 +1,10 @@
 export const siteConfig = {
-  name: "PropInvest",
+  name: "InvestsProperty",
+  byline: "by Maa Rudrani Properties",
   tagline: "Real estate, verified.",
   description:
-    "Find RERA-verified residential and commercial projects across India. Compare prices, book site visits, and talk directly to project teams on PropInvest.",
-  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://propinvest.co.in",
+    "Find RERA-verified residential and commercial projects across India. Compare prices, book site visits, and talk directly to project teams on InvestsProperty.",
+  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://investsproperty.com",
   ogImage: "/og-image.png",
   locale: "en_IN",
   keywords: [
@@ -17,14 +18,14 @@ export const siteConfig = {
   contact: {
     // Default WhatsApp business number for site-wide "talk to an advisor" CTAs.
     // Per-project call/WhatsApp numbers live in data/properties.json.
-    whatsapp: process.env.NEXT_PUBLIC_DEFAULT_WHATSAPP ?? "919999999999",
-    phone: process.env.NEXT_PUBLIC_DEFAULT_PHONE ?? "+919999999999",
-    email: "hello@propinvest.co.in",
+    whatsapp: process.env.NEXT_PUBLIC_DEFAULT_WHATSAPP ?? "919716390299",
+    phone: process.env.NEXT_PUBLIC_DEFAULT_PHONE ?? "+919716390299",
+    email: "hello@investsproperty.com",
   },
   social: {
-    instagram: "https://instagram.com/propinvest",
-    facebook: "https://facebook.com/propinvest",
-    linkedin: "https://linkedin.com/company/propinvest",
+    instagram: "https://instagram.com/investsproperty",
+    facebook: "https://facebook.com/investsproperty",
+    linkedin: "https://linkedin.com/company/investsproperty",
   },
 } as const;
 

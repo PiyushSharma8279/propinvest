@@ -1,51 +1,56 @@
-export type PossessionStatus = "New Launch" | "Under Construction" | "Ready to Move";
+import type { Property, User } from "@/server/db/schema";
+import type {
+  PossessionStatus,
+  PropertyCategory,
+  SortOption,
+  UserRole,
+} from "@/lib/constants/property";
 
-export type PropertyCategory = "Residential" | "Commercial";
+export type { Property, User, PossessionStatus, PropertyCategory, SortOption, UserRole };
 
-export interface Property {
-  id: string;
-  slug: string;
-  title: string;
-  builder: string;
-  city: string;
-  locality: string;
-  state: string;
-  /** High-level split used for filtering — "Residential" or "Commercial" */
-  category: PropertyCategory;
-  propertyType: string;
-  configurations: string[];
-  priceMin: number;
-  priceMax: number;
-  priceDisplay: string;
-  areaMin: number;
-  areaMax: number;
-  areaUnit: string;
-  status: PossessionStatus;
-  possessionDate: string;
-  possessionDisplay: string;
-  reraRegistered: boolean;
-  reraNumber: string;
-  featured: boolean;
-  description: string;
-  usps: string[];
-  amenities: string[];
-  images: string[];
-  /** E.164 format, used for the tel: click-to-call link */
-  phone: string;
-  /** Digits only with country code, used for the wa.me WhatsApp link */
-  whatsapp: string;
+/** What the browser and JWT know about the signed-in user. Never includes the password hash. */
+export interface SessionUser {
+  id: number;
+  name: string;
+  email: string;
+  role: UserRole;
 }
 
-export interface ProjectFilters {
+/** Filters for the public /projects listing. Budgets are in rupees. */
+export interface PropertyFilters {
+  /** Free-text location search: address, locality, city, state, country */
+  q?: string;
   city?: string;
-  /** "Residential" or "Commercial" */
+  state?: string;
+  country?: string;
   category?: PropertyCategory;
-  /** One or more BHK values, e.g. ["2", "3"] */
+  type?: string;
   bhk?: string[];
   minBudget?: number;
   maxBudget?: number;
-  /** One or more of "New Launch" | "Under Construction" | "Ready to Move" */
-  possession?: string[];
+  minArea?: number;
+  maxArea?: number;
+  possession?: PossessionStatus[];
   rera?: boolean;
-  sort?: "price-asc" | "price-desc" | "possession";
+  furnishing?: string;
+  facing?: string;
+  sort?: SortOption;
+  page: number;
+}
+
+export interface Paginated<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+/** Filter tabs in the admin property list. */
+export type AdminPropertyView = "all" | "active" | "inactive" | "featured" | "deleted";
+
+export interface LocationOptions {
+  cities: string[];
+  states: string[];
+  countries: string[];
 }
