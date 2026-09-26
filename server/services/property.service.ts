@@ -1,5 +1,6 @@
 import "server-only";
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import {
   and,
   asc,
@@ -125,75 +126,128 @@ function orderFor(sort: PropertyFilters["sort"]): SQL[] {
   }
 }
 
-/* ---------- Public reads ---------- */
+/* ---------- Public reads (cached) ---------- */
 
-export async function listPublicProperties(filters: PropertyFilters): Promise<Paginated<Property>> {
-  const where = and(...filterConditions(filters));
-  const pageSize = PAGE_SIZE;
-  const page = filters.page;
+/**
+ * Every public read goes through Next's data cache under one tag, so pages render from memory
+ * instead of waiting on the database. Any admin change calls revalidatePublicPages(), which
+ * expires this tag immediately (server/services/revalidate.service.ts). The hourly revalidate is
+ * only a safety net.
+ */
+export const PUBLIC_PROPERTIES_TAG = "public-properties";
 
-  const [items, [{ total }]] = await Promise.all([
-    db
-      .select()
-      .from(p)
-      .where(where)
-      .orderBy(...orderFor(filters.sort))
-      .limit(pageSize)
-      .offset((page - 1) * pageSize),
-    db.select({ total: count() }).from(p).where(where),
-  ]);
-
-  return { items, total, page, pageSize, totalPages: Math.max(1, Math.ceil(total / pageSize)) };
+function publicCache<Args extends unknown[], Result>(
+  key: string,
+  fn: (...args: Args) => Promise<Result>
+): (...args: Args) => Promise<Result> {
+  return unstable_cache(fn, ["public", key], { tags: [PUBLIC_PROPERTIES_TAG], revalidate: 3600 });
 }
 
-export async function getFeaturedProperties(limit = 3): Promise<Property[]> {
-  return db
+/** The data cache stores JSON, so Date columns come back as strings; turn them back into Dates. */
+function reviveDates(row: Property): Property {
+  return {
+    ...row,
+    createdAt: new Date(row.createdAt),
+    updatedAt: new Date(row.updatedAt),
+    deletedAt: row.deletedAt ? new Date(row.deletedAt) : null,
+  };
+}
+
+const listPublicPropertiesCached = publicCache(
+  "list",
+  async (filters: PropertyFilters): Promise<Paginated<Property>> => {
+    const where = and(...filterConditions(filters));
+    const pageSize = PAGE_SIZE;
+    const page = filters.page;
+
+    const [items, [{ total }]] = await Promise.all([
+      db
+        .select()
+        .from(p)
+        .where(where)
+        .orderBy(...orderFor(filters.sort))
+        .limit(pageSize)
+        .offset((page - 1) * pageSize),
+      db.select({ total: count() }).from(p).where(where),
+    ]);
+
+    return { items, total, page, pageSize, totalPages: Math.max(1, Math.ceil(total / pageSize)) };
+  }
+);
+
+/** Wrapped in cache() too, so a page and its generateMetadata share one lookup per request. */
+export const listPublicProperties = cache(async (filters: PropertyFilters): Promise<Paginated<Property>> => {
+  const result = await listPublicPropertiesCached(filters);
+  return { ...result, items: result.items.map(reviveDates) };
+});
+
+const getFeaturedPropertiesCached = publicCache("featured", (limit: number) =>
+  db
     .select()
     .from(p)
     .where(and(isPublic, eq(p.isFeatured, true)))
     .orderBy(desc(p.updatedAt))
-    .limit(limit);
+    .limit(limit)
+);
+
+export async function getFeaturedProperties(limit = 3): Promise<Property[]> {
+  return (await getFeaturedPropertiesCached(limit)).map(reviveDates);
 }
 
-/** Wrapped in cache() so a page and its generateMetadata share one query. */
-export const getPublicPropertyBySlug = cache(async (slug: string): Promise<Property | undefined> => {
+const getPublicPropertyBySlugCached = publicCache("slug", async (slug: string) => {
   const [row] = await db
     .select()
     .from(p)
     .where(and(isPublic, eq(p.slug, slug)))
     .limit(1);
-  return row;
+  return row ?? null;
 });
 
-export async function getRelatedProperties(property: Property, limit = 3): Promise<Property[]> {
-  return db
+/** Wrapped in cache() so a page and its generateMetadata share one lookup. */
+export const getPublicPropertyBySlug = cache(async (slug: string): Promise<Property | undefined> => {
+  const row = await getPublicPropertyBySlugCached(slug);
+  return row ? reviveDates(row) : undefined;
+});
+
+const getRelatedPropertiesCached = publicCache("related", (id: number, city: string, limit: number) =>
+  db
     .select()
     .from(p)
-    .where(and(isPublic, ne(p.id, property.id), equalsIgnoreCase(p.city, property.city)))
+    .where(and(isPublic, ne(p.id, id), equalsIgnoreCase(p.city, city)))
     .orderBy(desc(p.isFeatured), desc(p.createdAt))
-    .limit(limit);
+    .limit(limit)
+);
+
+export async function getRelatedProperties(property: Property, limit = 3): Promise<Property[]> {
+  return (await getRelatedPropertiesCached(property.id, property.city, limit)).map(reviveDates);
 }
 
+const getPublicSlugsCached = publicCache("slugs", () =>
+  db.select({ slug: p.slug, updatedAt: p.updatedAt }).from(p).where(isPublic)
+);
+
 export async function getPublicSlugs(): Promise<{ slug: string; updatedAt: Date }[]> {
-  return db.select({ slug: p.slug, updatedAt: p.updatedAt }).from(p).where(isPublic);
+  return (await getPublicSlugsCached()).map((r) => ({ slug: r.slug, updatedAt: new Date(r.updatedAt) }));
 }
 
 /** Distinct values for the city / state / country dropdowns. */
-export const getLocationOptions = cache(async (): Promise<LocationOptions> => {
-  const rows = await db
-    .selectDistinct({ city: p.city, state: p.state, country: p.country })
-    .from(p)
-    .where(isPublic);
-  const unique = (values: string[]) =>
-    [...new Set(values.map((v) => v.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
-  return {
-    cities: unique(rows.map((r) => r.city)),
-    states: unique(rows.map((r) => r.state)),
-    countries: unique(rows.map((r) => r.country)),
-  };
-});
+export const getLocationOptions = cache(
+  publicCache("locations", async (): Promise<LocationOptions> => {
+    const rows = await db
+      .selectDistinct({ city: p.city, state: p.state, country: p.country })
+      .from(p)
+      .where(isPublic);
+    const unique = (values: string[]) =>
+      [...new Set(values.map((v) => v.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    return {
+      cities: unique(rows.map((r) => r.city)),
+      states: unique(rows.map((r) => r.state)),
+      countries: unique(rows.map((r) => r.country)),
+    };
+  })
+);
 
-export async function getPublicStats() {
+export const getPublicStats = publicCache("stats", async () => {
   const [row] = await db
     .select({
       properties: count(),
@@ -203,7 +257,8 @@ export async function getPublicStats() {
     .from(p)
     .where(isPublic);
   return row;
-}
+});
+
 
 /* ---------- Admin reads ---------- */
 

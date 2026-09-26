@@ -26,10 +26,15 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   const { heading, place } = describeFilters(filters);
   const query = toSearchParams(params).toString();
 
+  const title = `${heading} for Sale in ${place} - ${total} ${total === 1 ? "Listing" : "Listings"}`;
+  const description = `Browse ${total} verified ${heading.toLowerCase()} in ${place}. Compare price, area, possession and exact location, then call or WhatsApp the project team directly.`;
+  const path = `/projects${query ? `?${query}` : ""}`;
   return {
-    title: `${heading} for Sale in ${place} - ${total} ${total === 1 ? "Listing" : "Listings"}`,
-    description: `Browse ${total} verified ${heading.toLowerCase()} in ${place}. Compare price, area, possession and exact location, then call or WhatsApp the project team directly.`,
-    alternates: { canonical: `/projects${query ? `?${query}` : ""}` },
+    title,
+    description,
+    alternates: { canonical: path },
+    openGraph: { title: `${title} | ${siteConfig.name}`, description, url: `${siteConfig.url}${path}`, siteName: siteConfig.name, type: "website" },
+    twitter: { card: "summary_large_image", title, description },
     // Deep filter combinations are near-duplicates; keep them out of the index.
     robots: filters.page > 1 || Object.keys(params).length > 2 ? { index: false, follow: true } : undefined,
   };

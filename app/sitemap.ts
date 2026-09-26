@@ -3,6 +3,12 @@ import { categories } from "@/lib/constants/property";
 import { siteConfig } from "@/lib/site-config";
 import { getLocationOptions, getPublicSlugs } from "@/server/services/property.service";
 
+/**
+ * Served at /sitemap.xml: home, listings, category and city pages, and every live property.
+ * Cached, and rebuilt whenever a listing changes (revalidatePublicPages).
+ */
+export const revalidate = 3600;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [slugs, { cities }] = await Promise.all([getPublicSlugs(), getLocationOptions()]);
   const now = new Date();

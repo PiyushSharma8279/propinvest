@@ -44,10 +44,20 @@ import {
   formatRupees,
   ratePerUnit,
 } from "@/lib/utils/format";
-import { getPublicPropertyBySlug, getRelatedProperties } from "@/server/services/property.service";
+import { getPublicPropertyBySlug, getPublicSlugs, getRelatedProperties } from "@/server/services/property.service";
 
-/** Server-side rendered on every request, so edits in the admin panel show immediately. */
-export const dynamic = "force-dynamic";
+/**
+ * Pre-rendered HTML, so a click opens the page instantly. Every live listing is built ahead of
+ * time; a listing added later is built on its first visit and then served from cache. Admin
+ * edits rebuild the page right away (server/services/revalidate.service.ts).
+ */
+export const revalidate = 3600;
+export const dynamicParams = true;
+
+export async function generateStaticParams() {
+  const slugs = await getPublicSlugs();
+  return slugs.map(({ slug }) => ({ slug }));
+}
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -61,29 +71,39 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!property) return { title: "Property not found", robots: { index: false } };
 
   const place = joinAddress(property.locality, property.city);
+  const price = formatPriceRange(property.priceMin, property.priceMax);
   const title = `${property.title}, ${place} - Price, Location & Details`;
   const configs = property.configurations.length ? `${property.configurations.join(", ")} ` : "";
   const description = [
     `${configs}${property.propertyType} in ${property.title}, ${place}.`,
-    `Price ${formatPriceRange(property.priceMin, property.priceMax)}.`,
+    `Price ${price}.`,
+    property.areaMin ? `Area ${formatAreaRange(property.areaMin, property.areaMax, property.areaUnit).replace(/\.$/, "")}.` : "",
     `Possession ${formatPossession(property.possessionDate, property.status)}.`,
-    property.reraRegistered ? `RERA: ${property.reraNumber}.` : "",
+    property.reraRegistered ? `RERA registered${property.reraNumber ? `: ${property.reraNumber}` : ""}.` : "",
+    property.usps[0] ?? "",
   ]
     .filter(Boolean)
-    .join(" ");
+    .join(" ")
+    .slice(0, 300);
+  const url = `${siteConfig.url}/projects/${property.slug}`;
+  // Short title for link previews: "Skyline Arte · ₹3.47 Cr - 7.77 Cr · Sector 150, Noida"
+  const shareTitle = `${property.title} · ${price} · ${place}`;
+  // The preview image (property photo + price card) comes from ./opengraph-image.tsx.
 
   return {
     title,
     description,
+    keywords: [property.title, property.propertyType, property.city, property.locality, `${property.propertyType} in ${property.city}`].filter(Boolean),
     alternates: { canonical: `/projects/${property.slug}` },
     openGraph: {
-      title,
+      title: shareTitle,
       description,
       type: "website",
-      url: `${siteConfig.url}/projects/${property.slug}`,
-      images: property.images.slice(0, 1).map((url) => ({ url: absoluteUrl(url, siteConfig.url) })),
+      url,
+      siteName: siteConfig.name,
+      locale: siteConfig.locale,
     },
-    twitter: { card: "summary_large_image", title, description },
+    twitter: { card: "summary_large_image", title: shareTitle, description },
   };
 }
 
