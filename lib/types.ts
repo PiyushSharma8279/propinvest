@@ -47,7 +47,7 @@ export interface Paginated<T> {
 }
 
 /** Filter tabs in the admin property list. */
-export type AdminPropertyView = "all" | "active" | "inactive" | "featured" | "deleted";
+export type AdminPropertyView = "all" | "active" | "inactive" | "featured" | "drafts" | "deleted";
 
 export interface LocationOptions {
   cities: string[];

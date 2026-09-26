@@ -26,6 +26,7 @@ const views: { value: AdminPropertyView; label: string }[] = [
   { value: "active", label: "Active" },
   { value: "inactive", label: "Inactive" },
   { value: "featured", label: "Featured" },
+  { value: "drafts", label: "Drafts" },
   { value: "deleted", label: "Deleted" },
 ];
 
@@ -332,12 +333,14 @@ function PropertyRow({ property: p }: { property: Property }) {
         <div className="flex flex-wrap gap-1">
           {p.isDeleted ? (
             <Badge tone="danger">Deleted</Badge>
+          ) : p.isDraft ? (
+            <Badge tone="gold">Draft</Badge>
           ) : p.isActive ? (
             <Badge tone="teal">Live</Badge>
           ) : (
             <Badge>Hidden</Badge>
           )}
-          {p.isFeatured && !p.isDeleted && <Badge tone="gold">Featured</Badge>}
+          {p.isFeatured && !p.isDeleted && !p.isDraft && <Badge tone="gold">Featured</Badge>}
         </div>
       </td>
       <td className="hidden whitespace-nowrap px-4 py-3 text-muted tabular-nums xl:table-cell">

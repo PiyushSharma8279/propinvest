@@ -32,6 +32,7 @@ import RERABadge from "@/components/property/RERABadge";
 import ShareButton from "@/components/property/ShareButton";
 import { buttonClass } from "@/components/ui/Button";
 import { configurationField, sqmPerUnit } from "@/lib/constants/property";
+import { richTextToHtml, richTextToPlain } from "@/lib/rich-text";
 import { siteConfig } from "@/lib/site-config";
 import type { Property } from "@/lib/types";
 import { cn } from "@/lib/utils/cn";
@@ -185,7 +186,7 @@ export default async function ProjectDetailPage({ params }: Props) {
     "@context": "https://schema.org",
     "@type": "RealEstateListing",
     name: property.title,
-    description: property.description,
+    description: richTextToPlain(property.description),
     url: `${siteConfig.url}/projects/${property.slug}`,
     image: property.images.map((img) => absoluteUrl(img, siteConfig.url)),
     address: {
@@ -286,7 +287,8 @@ export default async function ProjectDetailPage({ params }: Props) {
           </div>
 
           <Panel title="Overview">
-            <p className="whitespace-pre-line text-sm leading-relaxed text-muted">{property.description}</p>
+            {/* Sanitized server-side (lib/rich-text.ts): only the editor's formatting tags and safe links remain. */}
+            <div className="rich-text" dangerouslySetInnerHTML={{ __html: richTextToHtml(property.description) }} />
           </Panel>
 
           {highlights.length > 0 && (

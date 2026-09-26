@@ -29,7 +29,7 @@ import type {
 } from "@/lib/types";
 import { nextAvailableSlug, slugify } from "@/lib/utils/slug";
 import { db, schema } from "../db/client";
-import { notFound } from "../http";
+import { HttpError, notFound } from "../http";
 import type { PropertyInput } from "../validators/property.validator";
 
 const { properties: p } = schema;
@@ -41,8 +41,8 @@ function assertId(id: number): void {
   if (!Number.isSafeInteger(id) || id <= 0) throw notFound("Property not found.");
 }
 
-/** Visible on the public website: active and not soft-deleted. */
-const isPublic = and(eq(p.isActive, true), eq(p.isDeleted, false))!;
+/** Visible on the public website: published (not a draft), active and not soft-deleted. */
+const isPublic = and(eq(p.isDraft, false), eq(p.isActive, true), eq(p.isDeleted, false))!;
 
 /** Escapes % and _ so user input is matched literally inside ILIKE. */
 function likeEscape(value: string): string {
@@ -262,11 +262,14 @@ export const getPublicStats = publicCache("stats", async () => {
 
 /* ---------- Admin reads ---------- */
 
+/** Active / Hidden / Featured count published listings only; drafts have their own tab. */
+const published = and(eq(p.isDeleted, false), eq(p.isDraft, false))!;
 const adminViewCondition: Record<AdminPropertyView, SQL> = {
   all: eq(p.isDeleted, false),
-  active: and(eq(p.isDeleted, false), eq(p.isActive, true))!,
-  inactive: and(eq(p.isDeleted, false), eq(p.isActive, false))!,
-  featured: and(eq(p.isDeleted, false), eq(p.isFeatured, true))!,
+  active: and(published, eq(p.isActive, true))!,
+  inactive: and(published, eq(p.isActive, false))!,
+  featured: and(published, eq(p.isFeatured, true))!,
+  drafts: and(eq(p.isDeleted, false), eq(p.isDraft, true))!,
   deleted: eq(p.isDeleted, true),
 };
 
@@ -347,7 +350,7 @@ export async function getAdminCategoryCounts(): Promise<
     .select({
       category: p.category,
       total: count(),
-      live: sql<number>`count(*) filter (where ${p.isActive})`.mapWith(Number),
+      live: sql<number>`count(*) filter (where ${p.isActive} and not ${p.isDraft})`.mapWith(Number),
     })
     .from(p)
     .where(eq(p.isDeleted, false))
@@ -371,9 +374,10 @@ export async function getAdminCounts(): Promise<Record<AdminPropertyView, number
   const [row] = await db
     .select({
       all: sql<number>`count(*) filter (where not ${p.isDeleted})`.mapWith(Number),
-      active: sql<number>`count(*) filter (where not ${p.isDeleted} and ${p.isActive})`.mapWith(Number),
-      inactive: sql<number>`count(*) filter (where not ${p.isDeleted} and not ${p.isActive})`.mapWith(Number),
-      featured: sql<number>`count(*) filter (where not ${p.isDeleted} and ${p.isFeatured})`.mapWith(Number),
+      active: sql<number>`count(*) filter (where not ${p.isDeleted} and not ${p.isDraft} and ${p.isActive})`.mapWith(Number),
+      inactive: sql<number>`count(*) filter (where not ${p.isDeleted} and not ${p.isDraft} and not ${p.isActive})`.mapWith(Number),
+      featured: sql<number>`count(*) filter (where not ${p.isDeleted} and not ${p.isDraft} and ${p.isFeatured})`.mapWith(Number),
+      drafts: sql<number>`count(*) filter (where not ${p.isDeleted} and ${p.isDraft})`.mapWith(Number),
       deleted: sql<number>`count(*) filter (where ${p.isDeleted})`.mapWith(Number),
     })
     .from(p);
@@ -404,21 +408,54 @@ export async function generateUniqueSlug(title: string, excludeId?: number): Pro
   return nextAvailableSlug(base, new Set(rows.map((r) => r.slug)));
 }
 
+/** Creates a published listing in one step. */
 export async function createProperty(input: PropertyInput, userId: number): Promise<Property> {
   const slug = await generateUniqueSlug(input.title);
   const [row] = await db
     .insert(p)
-    .values({ ...input, slug, createdBy: userId })
+    .values({ ...input, slug, isDraft: false, createdBy: userId })
     .returning();
   return row;
 }
 
-/** Re-generates the slug only when the title changed, so shared links keep working otherwise. */
+/**
+ * Saves a full (validated) listing and publishes it. A draft gets its real slug now; an already
+ * published listing re-generates its slug only when the title changed, so shared links keep working.
+ */
 export async function updateProperty(id: number, input: PropertyInput): Promise<Property> {
   const existing = await getPropertyById(id);
   const slug =
-    existing.title === input.title ? existing.slug : await generateUniqueSlug(input.title, id);
-  const [row] = await db.update(p).set({ ...input, slug }).where(eq(p.id, id)).returning();
+    !existing.isDraft && existing.title === input.title
+      ? existing.slug
+      : await generateUniqueSlug(input.title, id);
+  const [row] = await db.update(p).set({ ...input, slug, isDraft: false }).where(eq(p.id, id)).returning();
+  return row;
+}
+
+/* ---------- Drafts (autosave) ---------- */
+
+/** Drafts get a throwaway slug so they never claim a real one; publishing assigns the real slug. */
+const draftSlug = () => `draft-${crypto.randomUUID()}`;
+
+export async function createDraft(input: PropertyInput, userId: number): Promise<Property> {
+  const [row] = await db
+    .insert(p)
+    .values({ ...input, slug: draftSlug(), isDraft: true, createdBy: userId })
+    .returning();
+  return row;
+}
+
+/** Autosave for a draft. Refuses published listings, so autosave can never change the live site. */
+export async function updateDraft(id: number, input: PropertyInput): Promise<Property> {
+  const existing = await getPropertyById(id);
+  if (!existing.isDraft) {
+    throw new HttpError(409, "This listing is already published; use Save changes instead.");
+  }
+  const [row] = await db
+    .update(p)
+    .set({ ...input, slug: existing.slug, isDraft: true })
+    .where(eq(p.id, id))
+    .returning();
   return row;
 }
 

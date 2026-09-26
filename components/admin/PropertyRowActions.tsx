@@ -68,6 +68,29 @@ export default function PropertyRowActions({ property }: { property: Property })
     }
   }
 
+  // Drafts aren't live yet: only continue editing (and publish from the form) or delete.
+  if (property.isDraft && !property.isDeleted) {
+    return (
+      <div className="flex items-center justify-end gap-0.5">
+        <Link
+          href={`/admin/properties/${property.id}/edit`}
+          title="Continue editing and publish"
+          className={cn(actionClass, "text-primary hover:bg-primary-soft")}
+        >
+          <Pencil className="h-3.5 w-3.5" /> Continue
+        </Link>
+        <ActionButton
+          label="Delete"
+          title="Delete this draft (can be restored later)"
+          icon={<Trash2 className="h-3.5 w-3.5" />}
+          loading={busy === "delete"}
+          onClick={() => run("delete")}
+          className="text-danger hover:bg-danger-soft"
+        />
+      </div>
+    );
+  }
+
   if (property.isDeleted) {
     return (
       <div className="flex justify-end">

@@ -100,6 +100,8 @@ export const properties = pgTable(
     hasConstruction: boolean("has_construction"),
 
     // Visibility
+    /** Drafts are autosaved while a listing is being written; never shown on the website. */
+    isDraft: boolean("is_draft").notNull().default(false),
     isFeatured: boolean("is_featured").notNull().default(false),
     isActive: boolean("is_active").notNull().default(true),
     /** Soft delete: rows are never removed, only flagged. */

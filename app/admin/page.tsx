@@ -6,6 +6,7 @@ import {
   Building,
   Building2,
   Eye,
+  FilePen,
   EyeOff,
   LandPlot,
   LayoutList,
@@ -46,6 +47,7 @@ export default async function AdminDashboardPage() {
     { label: "Live on website", value: counts.active, icon: Eye, tone: "bg-primary-soft text-primary", href: "/admin/properties?view=active" },
     { label: "Featured", value: counts.featured, icon: Star, tone: "bg-highlight-soft text-highlight", href: "/admin/properties?view=featured" },
     { label: "Hidden", value: counts.inactive, icon: EyeOff, tone: "bg-surface-muted text-muted", href: "/admin/properties?view=inactive" },
+    { label: "Drafts", value: counts.drafts, icon: FilePen, tone: "bg-highlight-soft text-highlight", href: "/admin/properties?view=drafts" },
     { label: "Deleted", value: counts.deleted, icon: Trash2, tone: "bg-danger-soft text-danger", href: "/admin/properties?view=deleted" },
   ];
 
@@ -64,7 +66,7 @@ export default async function AdminDashboardPage() {
       </div>
 
       {/* Stat tiles */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
         {stats.map(({ label, value, icon: Icon, tone, href }) => (
           <Link
             key={label}
@@ -159,7 +161,7 @@ export default async function AdminDashboardPage() {
                         {p.updatedAt.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
                       </p>
                     </div>
-                    {p.isActive ? <Badge tone="teal">Live</Badge> : <Badge>Hidden</Badge>}
+                    {p.isDraft ? <Badge tone="gold">Draft</Badge> : p.isActive ? <Badge tone="teal">Live</Badge> : <Badge>Hidden</Badge>}
                   </Link>
                 </li>
               ))}

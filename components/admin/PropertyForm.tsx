@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Building, Building2, LandPlot } from "lucide-react";
+import { AlertCircle, ArrowLeft, Building, Building2, Check, LandPlot, Loader2 } from "lucide-react";
 import ImageUpload from "@/components/forms/ImageUpload";
 import LocationPicker from "@/components/forms/LocationPicker";
+import RichTextEditor from "@/components/forms/RichTextEditor";
 import TagField from "@/components/forms/TagField";
 import { Button, LinkButton } from "@/components/ui/Button";
 import { Section } from "@/components/ui/Card";
@@ -118,7 +119,7 @@ function initialState(property: Property | undefined, category: PropertyCategory
   return {
     title: property?.title ?? "",
     builder: property?.builder ?? "",
-    description: property?.description ?? "",
+    description: plainToHtml(property?.description ?? ""),
     category: cat,
     propertyType: property?.propertyType ?? propertyTypes[cat][0],
     configurations: property?.configurations ?? [],
@@ -248,21 +249,115 @@ export default function PropertyForm({
     }));
   }
 
+  /* ---------- Draft autosave ---------- */
+
+  // New listings and drafts autosave; published listings only change when "Save changes" is clicked.
+  const autosaveEnabled = !property || property.isDraft;
+  const [draft, setDraft] = useState<DraftStatus>(
+    property?.isDraft ? { state: "saved", at: new Date(property.updatedAt) } : { state: "idle" }
+  );
+  const draftIdRef = useRef<number | null>(property?.isDraft ? property.id : null);
+  const formRef = useRef(form);
+  const [initialSnapshot] = useState(() => JSON.stringify(toRequestBody(form)));
+  const lastSavedRef = useRef(initialSnapshot);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inFlightRef = useRef<Promise<void> | null>(null);
+  const publishingRef = useRef(false);
+  const saveDraftRef = useRef<() => Promise<void>>(async () => {});
+
+  useEffect(() => {
+    formRef.current = form;
+  }, [form]);
+
+  const scheduleSave = useCallback(() => {
+    timerRef.current = setTimeout(() => void saveDraftRef.current(), AUTOSAVE_MS);
+  }, []);
+
+  const saveDraft = useCallback(async () => {
+    timerRef.current = null;
+    if (publishingRef.current) return;
+    const body = toRequestBody(formRef.current);
+    const snapshot = JSON.stringify(body);
+    if (snapshot === lastSavedRef.current) return;
+
+    setDraft({ state: "saving" });
+    const run = (async () => {
+      try {
+        if (draftIdRef.current) {
+          await api(`/api/properties/${draftIdRef.current}/draft`, { method: "PUT", body });
+        } else {
+          const { property: created } = await api<{ property: Property }>("/api/properties/draft", {
+            method: "POST",
+            body,
+          });
+          draftIdRef.current = created.id;
+          // Reloading the page now reopens this draft instead of starting a second one.
+          window.history.replaceState(null, "", `/admin/properties/${created.id}/edit`);
+        }
+        lastSavedRef.current = snapshot;
+        setDraft({ state: "saved", at: new Date() });
+      } catch {
+        setDraft({ state: "error" });
+      }
+    })();
+    inFlightRef.current = run;
+    await run;
+    inFlightRef.current = null;
+    // More edits arrived while saving: queue the next save.
+    if (!publishingRef.current && JSON.stringify(toRequestBody(formRef.current)) !== lastSavedRef.current) {
+      scheduleSave();
+    }
+  }, [scheduleSave]);
+
+  useEffect(() => {
+    saveDraftRef.current = saveDraft;
+  }, [saveDraft]);
+
+  // Save at most every 5 seconds while the form keeps changing.
+  useEffect(() => {
+    if (!autosaveEnabled || publishingRef.current || timerRef.current || inFlightRef.current) return;
+    if (JSON.stringify(toRequestBody(form)) === lastSavedRef.current) return;
+    scheduleSave();
+  }, [form, autosaveEnabled, scheduleSave]);
+
+  // Clear the timer on unmount, and warn before leaving with changes that aren't saved yet.
+  useEffect(() => {
+    const warn = (e: BeforeUnloadEvent) => {
+      if (!publishingRef.current && JSON.stringify(toRequestBody(formRef.current)) !== lastSavedRef.current) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => {
+      window.removeEventListener("beforeunload", warn);
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+
+  /** "Add property" / "Publish" / "Save changes": full validation, then the listing goes live. */
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setSaving(true);
     setErrors({});
     setFormError(null);
+    publishingRef.current = true;
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = null;
     try {
+      // Let a running autosave finish so we publish that draft rather than creating a duplicate.
+      if (inFlightRef.current) await inFlightRef.current;
       const body = toRequestBody(form);
-      if (property) {
-        await api(`/api/properties/${property.id}`, { method: "PUT", body });
+      const id = property && !property.isDraft ? property.id : draftIdRef.current;
+      if (id) {
+        await api(`/api/properties/${id}`, { method: "PUT", body });
       } else {
         await api("/api/properties", { method: "POST", body });
       }
+      lastSavedRef.current = JSON.stringify(body);
       router.push(`/admin/properties?saved=${encodeURIComponent(form.title)}`);
       router.refresh();
     } catch (err) {
+      publishingRef.current = false;
       if (err instanceof ApiError) {
         setErrors(err.errors);
         setFormError(err.message);
@@ -327,25 +422,34 @@ export default function PropertyForm({
         <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
             <h1 className="truncate text-2xl font-bold text-ink">{title}</h1>
-            <p className="mt-0.5 truncate text-sm text-muted">
+            <p className="mt-0.5 flex min-w-0 items-center gap-3 truncate text-sm text-muted">
               {uploading ? (
                 "Waiting for images to finish uploading…"
               ) : formError ? (
                 <span className="text-danger">{formError}</span>
               ) : (
                 <>
-                  {categoryLabels[form.category]} · {form.propertyType}
-                  {headerExtra && <span className="ml-3">{headerExtra}</span>}
+                  <span className="truncate">
+                    {categoryLabels[form.category]} · {form.propertyType}
+                  </span>
+                  {autosaveEnabled && <DraftIndicator status={draft} />}
+                  {headerExtra}
                 </>
               )}
             </p>
           </div>
           <div className="flex shrink-0 gap-2">
             <LinkButton href="/admin/properties" variant="outline">
-              Cancel
+              {autosaveEnabled && draft.state === "saved" ? "Close" : "Cancel"}
             </LinkButton>
             <Button type="submit" loading={saving} disabled={uploading}>
-              {saving ? "Saving…" : property ? "Save changes" : "Add property"}
+              {saving
+                ? "Publishing…"
+                : !property
+                  ? "Add property"
+                  : property.isDraft
+                    ? "Publish"
+                    : "Save changes"}
             </Button>
           </div>
         </div>
@@ -420,13 +524,14 @@ export default function PropertyForm({
             <input {...bind("builder")} placeholder="e.g. Skyline Group" />
           </Field>
         </div>
-        <Field label="Description" error={errors.description}>
-          <textarea
-            {...bind("description")}
-            rows={5}
+        <ChoiceField label="Description" error={errors.description}>
+          <RichTextEditor
+            value={form.description}
+            onChange={(html) => set("description", html)}
+            invalid={Boolean(errors.description)}
             placeholder="What makes this property worth a visit? Location, connectivity, layout, nearby landmarks…"
           />
-        </Field>
+        </ChoiceField>
         <Field label="Highlights" hint="One per line. The first three show on the listing card.">
           <textarea
             {...bind("usps")}
@@ -825,4 +930,50 @@ function AmountHint({ rupees, suffix = "", fallback }: { rupees: number; suffix?
       {suffix} · <span className="font-semibold text-primary">{formatAmountInWords(rupees)}</span>
     </>
   );
+}
+
+/* ---------- Draft autosave helpers ---------- */
+
+const AUTOSAVE_MS = 5000;
+
+type DraftStatus =
+  | { state: "idle" }
+  | { state: "saving" }
+  | { state: "saved"; at: Date }
+  | { state: "error" };
+
+function DraftIndicator({ status }: { status: DraftStatus }) {
+  if (status.state === "idle") {
+    return <span className="shrink-0 text-xs text-subtle">Changes save as a draft automatically</span>;
+  }
+  if (status.state === "saving") {
+    return (
+      <span className="inline-flex shrink-0 items-center gap-1 text-xs text-muted">
+        <Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving draft…
+      </span>
+    );
+  }
+  if (status.state === "error") {
+    return (
+      <span className="inline-flex shrink-0 items-center gap-1 text-xs text-danger">
+        <AlertCircle className="h-3.5 w-3.5" /> Draft not saved — retrying on your next change
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-highlight-soft px-2 py-0.5 text-xs font-medium text-ink">
+      <Check className="h-3.5 w-3.5 text-primary" />
+      Draft saved {status.at.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })} · not live yet
+    </span>
+  );
+}
+
+/** Older listings stored plain text; the editor needs HTML paragraphs. */
+function plainToHtml(value: string): string {
+  if (!value.trim() || /^\s*<(p|h[1-6]|ul|ol|blockquote|div|hr)[\s>/]/i.test(value)) return value;
+  const escape = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return value
+    .split(/\n{2,}/)
+    .map((block) => `<p>${escape(block.trim()).replace(/\n/g, "<br>")}</p>`)
+    .join("");
 }

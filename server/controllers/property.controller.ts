@@ -29,6 +29,26 @@ export const create = handle(async (request: Request) => {
   return json({ property }, { status: 201 });
 });
 
+/**
+ * POST /api/properties/draft — admin autosave: creates a draft from a partly filled form.
+ * Drafts are never public, so the website cache is left alone.
+ */
+export const createDraft = handle(async (request: Request) => {
+  const admin = await requireAdmin();
+  const input = validatePropertyInput(await readJson(request), "draft");
+  const property = await propertyService.createDraft(input, admin.id);
+  return json({ property }, { status: 201 });
+});
+
+/** PUT /api/properties/:id/draft — admin autosave for an existing draft (409 if already published). */
+export const updateDraft = handle(async (request: Request, { params }: IdContext) => {
+  await requireAdmin();
+  const id = await propertyId(params);
+  const input = validatePropertyInput(await readJson(request), "draft");
+  const property = await propertyService.updateDraft(id, input);
+  return json({ property });
+});
+
 /** GET /api/properties/:id — admin (includes inactive and deleted). */
 export const getById = handle(async (_request: Request, { params }: IdContext) => {
   await requireAdmin();
@@ -36,7 +56,7 @@ export const getById = handle(async (_request: Request, { params }: IdContext) =
   return json({ property: await propertyService.getPropertyById(id) });
 });
 
-/** PUT /api/properties/:id — admin, full update. */
+/** PUT /api/properties/:id — admin, full update. Also publishes a draft. */
 export const update = handle(async (request: Request, { params }: IdContext) => {
   await requireAdmin();
   const id = await propertyId(params);

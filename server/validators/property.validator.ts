@@ -1,9 +1,12 @@
 import {
   areaUnits,
   categories,
+  defaultAreaUnit,
+  propertyTypes,
   DEFAULT_COUNTRY,
   possessionStatuses,
 } from "@/lib/constants/property";
+import { richTextToPlain, sanitizeRichText } from "@/lib/rich-text";
 import { isValidLatLng } from "@/lib/utils/maps";
 import { normalizeIndianNumber } from "@/lib/utils/phone";
 import type { NewProperty } from "../db/schema";
@@ -24,8 +27,17 @@ function parsePossessionDate(raw: string): string | null | undefined {
   return undefined;
 }
 
-/** Validates a create/update request body. Throws a 422 HttpError listing every bad field. */
-export function validatePropertyInput(body: Record<string, unknown>): PropertyInput {
+/**
+ * Validates a create/update request body.
+ * - "publish" (default): every required field must be valid; throws a 422 listing every bad field.
+ * - "draft": used by autosave while a listing is still being written. Nothing is required and
+ *   invalid values are dropped instead of rejected, so a half-filled form can always be saved.
+ * Either way the description HTML is sanitized before it reaches the database.
+ */
+export function validatePropertyInput(
+  body: Record<string, unknown>,
+  mode: "publish" | "draft" = "publish"
+): PropertyInput {
   const v = collectErrors();
 
   const category = oneOf(categories, str(body, "category"));
@@ -37,8 +49,8 @@ export function validatePropertyInput(body: Record<string, unknown>): PropertyIn
   const title = str(body, "title", 200);
   if (!title) v.add("title", "Enter the project / property name.");
 
-  const description = str(body, "description", 10000);
-  if (!description) v.add("description", "Add a short description.");
+  const description = sanitizeRichText(str(body, "description", 50000));
+  if (!richTextToPlain(description)) v.add("description", "Add a short description.");
 
   const city = str(body, "city", 100);
   if (!city) v.add("city", "Enter the city.");
@@ -46,26 +58,36 @@ export function validatePropertyInput(body: Record<string, unknown>): PropertyIn
   if (!state) v.add("state", "Enter the state.");
   const country = str(body, "country", 100) || DEFAULT_COUNTRY;
 
-  const pincode = str(body, "pincode", 12);
-  if (pincode && !/^[A-Za-z0-9 -]{3,12}$/.test(pincode)) v.add("pincode", "Enter a valid PIN code.");
+  let pincode = str(body, "pincode", 12);
+  if (pincode && !/^[A-Za-z0-9 -]{3,12}$/.test(pincode)) {
+    v.add("pincode", "Enter a valid PIN code.");
+    pincode = "";
+  }
 
   const latitude = optionalNum(body, "latitude");
   const longitude = optionalNum(body, "longitude");
-  const hasLocation = latitude !== null || longitude !== null;
+  let hasLocation = latitude !== null || longitude !== null;
   if (hasLocation && !isValidLatLng(latitude, longitude)) {
     v.add("location", "Pick a valid point on the map, or clear the location.");
+    hasLocation = false;
   }
 
   const status = oneOf(possessionStatuses, str(body, "status"));
   if (!status) v.add("status", "Choose a status.");
 
   const priceMin = Math.round(num(body, "priceMin"));
-  const priceMax = Math.round(num(body, "priceMax")) || priceMin;
-  if (priceMin && priceMax < priceMin) v.add("priceMax", "Max price is lower than min price.");
+  let priceMax = Math.round(num(body, "priceMax")) || priceMin;
+  if (priceMin && priceMax < priceMin) {
+    v.add("priceMax", "Max price is lower than min price.");
+    priceMax = priceMin;
+  }
 
   const areaMin = num(body, "areaMin");
-  const areaMax = num(body, "areaMax") || areaMin;
-  if (areaMin && areaMax < areaMin) v.add("areaMax", "Max area is lower than min area.");
+  let areaMax = num(body, "areaMax") || areaMin;
+  if (areaMin && areaMax < areaMin) {
+    v.add("areaMax", "Max area is lower than min area.");
+    areaMax = areaMin;
+  }
   const areaUnit = oneOf(areaUnits, str(body, "areaUnit"));
   if (!areaUnit) v.add("areaUnit", "Choose a unit.");
 
@@ -81,22 +103,23 @@ export function validatePropertyInput(body: Record<string, unknown>): PropertyIn
   const whatsapp = whatsappRaw ? normalizeIndianNumber(whatsappRaw) : contact;
   if (whatsappRaw && !whatsapp) v.add("whatsapp", "Enter a valid WhatsApp number.");
 
-  const openSides = Math.round(num(body, "openSides"));
-  if (openSides > 4) v.add("openSides", "A plot has at most 4 open sides.");
+  const openSides = Math.min(4, Math.round(num(body, "openSides")));
+  if (Math.round(num(body, "openSides")) > 4) v.add("openSides", "A plot has at most 4 open sides.");
   const hasConstruction = typeof body.hasConstruction === "boolean" ? body.hasConstruction : null;
 
   const images = strArray(body, "images", 30).filter((url) => /^(https:\/\/|\/)/.test(url));
   if (images.length === 0) v.add("images", "Upload at least one photo.");
 
-  if (v.hasErrors) throw validationError(v.errors);
+  if (mode === "publish" && v.hasErrors) throw validationError(v.errors);
 
-  const isPlot = category === "Plot";
+  const resolvedCategory = category ?? "Residential";
+  const isPlot = resolvedCategory === "Plot";
   return {
-    title,
+    title: title || "Untitled draft",
     builder: str(body, "builder", 200),
     description,
-    category: category!,
-    propertyType,
+    category: resolvedCategory,
+    propertyType: propertyType || propertyTypes[resolvedCategory][0],
     // Plots no longer have a "plot sizes" field; the single plot area is used instead.
     configurations: isPlot ? [] : strArray(body, "configurations"),
     address: str(body, "address", 500),
@@ -111,16 +134,16 @@ export function validatePropertyInput(body: Record<string, unknown>): PropertyIn
     priceMax,
     areaMin,
     areaMax,
-    areaUnit: areaUnit!,
-    status: status!,
+    areaUnit: areaUnit ?? defaultAreaUnit[resolvedCategory],
+    status: status ?? "New Launch",
     possessionDate: possessionDate ?? null,
     reraRegistered,
     reraNumber: reraRegistered ? reraNumber : "",
     usps: strArray(body, "usps"),
     amenities: strArray(body, "amenities"),
     images,
-    phone: contact!.phone,
-    whatsapp: whatsapp!.whatsapp,
+    phone: contact?.phone ?? "",
+    whatsapp: whatsapp?.whatsapp ?? "",
     ownership: str(body, "ownership", 100),
     facing: str(body, "facing", 50),
     furnishing: isPlot ? "" : str(body, "furnishing", 50),
