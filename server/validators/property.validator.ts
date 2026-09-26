@@ -74,15 +74,16 @@ export function validatePropertyInput(body: Record<string, unknown>): PropertyIn
 
   const reraRegistered = bool(body, "reraRegistered");
   const reraNumber = str(body, "reraNumber", 100);
-  if (reraRegistered && !reraNumber) {
-    v.add("reraNumber", "Enter the RERA number or untick RERA registered.");
-  }
 
   const contact = normalizeIndianNumber(str(body, "phone", 30));
   if (!contact) v.add("phone", "Enter a valid mobile number (10 digits, or with country code).");
   const whatsappRaw = str(body, "whatsapp", 30);
   const whatsapp = whatsappRaw ? normalizeIndianNumber(whatsappRaw) : contact;
   if (whatsappRaw && !whatsapp) v.add("whatsapp", "Enter a valid WhatsApp number.");
+
+  const openSides = Math.round(num(body, "openSides"));
+  if (openSides > 4) v.add("openSides", "A plot has at most 4 open sides.");
+  const hasConstruction = typeof body.hasConstruction === "boolean" ? body.hasConstruction : null;
 
   const images = strArray(body, "images", 30).filter((url) => /^(https:\/\/|\/)/.test(url));
   if (images.length === 0) v.add("images", "Upload at least one photo.");
@@ -96,7 +97,8 @@ export function validatePropertyInput(body: Record<string, unknown>): PropertyIn
     description,
     category: category!,
     propertyType,
-    configurations: strArray(body, "configurations"),
+    // Plots no longer have a "plot sizes" field; the single plot area is used instead.
+    configurations: isPlot ? [] : strArray(body, "configurations"),
     address: str(body, "address", 500),
     locality: str(body, "locality", 200),
     city,
@@ -124,6 +126,8 @@ export function validatePropertyInput(body: Record<string, unknown>): PropertyIn
     furnishing: isPlot ? "" : str(body, "furnishing", 50),
     approvalAuthority: isPlot ? str(body, "approvalAuthority", 100) : "",
     cornerPlot: isPlot && bool(body, "cornerPlot"),
+    openSides: isPlot ? openSides : 0,
+    hasConstruction: isPlot ? hasConstruction : null,
     isFeatured: bool(body, "isFeatured"),
     isActive: body.isActive === undefined ? true : bool(body, "isActive"),
   };

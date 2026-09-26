@@ -49,3 +49,35 @@ export function joinAddress(...parts: (string | null | undefined)[]): string {
 export function absoluteUrl(pathOrUrl: string, siteUrl: string): string {
   return /^https?:\/\//.test(pathOrUrl) ? pathOrUrl : `${siteUrl}${pathOrUrl}`;
 }
+
+/** Indian digit grouping without a currency symbol: 250000 → "2,50,000". */
+export function formatRupees(rupees: number): string {
+  return Math.round(rupees).toLocaleString("en-IN");
+}
+
+/**
+ * Price per unit area. `sqmPerUnit` maps each unit to its size in square metres
+ * (lib/constants/property.ts), so a price for 100 sq.m. can be expressed per sq.yd. or sq.ft.
+ */
+export function ratePerUnit(
+  price: number,
+  area: number,
+  areaUnit: string,
+  targetUnit: string,
+  sqmPerUnit: Record<string, number>
+): number | null {
+  const from = sqmPerUnit[areaUnit];
+  const to = sqmPerUnit[targetUnit];
+  if (!price || !area || !from || !to) return null;
+  const sqm = area * from;
+  return (price / sqm) * to;
+}
+
+/** Amount in Indian words for form hints: 2600000 → "26 Lakh", 12500000 → "1.25 Crore", 45000 → "45 Thousand". */
+export function formatAmountInWords(rupees: number): string {
+  if (!rupees) return "";
+  if (rupees >= CRORE) return `${trimNumber(rupees / CRORE)} Crore`;
+  if (rupees >= LAKH) return `${trimNumber(rupees / LAKH)} Lakh`;
+  if (rupees >= 1000) return `${trimNumber(rupees / 1000)} Thousand`;
+  return `${trimNumber(rupees)}`;
+}

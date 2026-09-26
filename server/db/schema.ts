@@ -94,6 +94,10 @@ export const properties = pgTable(
     furnishing: text("furnishing").notNull().default(""),
     approvalAuthority: text("approval_authority").notNull().default(""),
     cornerPlot: boolean("corner_plot").notNull().default(false),
+    /** Plots: number of open sides (1-4); 0 = not specified. */
+    openSides: integer("open_sides").notNull().default(0),
+    /** Plots: whether there is any construction on the plot; null = not specified. */
+    hasConstruction: boolean("has_construction"),
 
     // Visibility
     isFeatured: boolean("is_featured").notNull().default(false),

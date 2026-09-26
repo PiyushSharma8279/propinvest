@@ -136,3 +136,34 @@ export type SortOption = Exclude<(typeof sortOptions)[number]["value"], "">;
 
 export const DEFAULT_COUNTRY = "India";
 export const PAGE_SIZE = 12;
+
+/* ---------- Plots ---------- */
+
+export const openSideOptions = [1, 2, 3, 4] as const;
+
+/** Development authorities offered in the plot form; "Other" reveals a free-text box. */
+export const approvalAuthorityOptions = ["YEIDA", "Greater Noida (GNIDA)", "Noida Authority"] as const;
+export const OTHER_AUTHORITY = "Other";
+
+/** Square metres in one unit of each area unit, for per-unit rate conversions. */
+export const sqmPerUnit: Record<(typeof areaUnits)[number], number> = {
+  "sq.ft.": 0.09290304,
+  "sq.yd.": 0.83612736,
+  "sq.m.": 1,
+  acre: 4046.8564224,
+};
+
+export const monthNames = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+] as const;

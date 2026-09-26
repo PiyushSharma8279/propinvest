@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight, BedDouble, CalendarClock, Images, MapPin, Ruler, ShieldCheck } from "lucide-react";
+import { ArrowUpRight, BedDouble, CalendarClock, CheckCircle2, Images, MapPin, Ruler, ShieldCheck } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { cn } from "@/lib/utils/cn";
 import { formatAreaRange, formatPossession, formatPriceRange, joinAddress } from "@/lib/utils/format";
@@ -16,13 +16,19 @@ export const statusStyles: Record<Property["status"], { dot: string; text: strin
 export default function PropertyCard({ property }: { property: Property }) {
   const href = `/projects/${property.slug}`;
   const status = statusStyles[property.status];
+  const highlights = property.usps.slice(0, 2);
   const specs = [
-    {
-      icon: BedDouble,
-      label: property.configurations.length ? property.configurations.slice(0, 2).join(", ") : property.propertyType,
-    },
     { icon: Ruler, label: formatAreaRange(property.areaMin, property.areaMax, property.areaUnit) },
-    { icon: CalendarClock, label: formatPossession(property.possessionDate, property.status) },
+    // The first two highlights from the admin form; older listings without any fall back to type + possession.
+    ...(highlights.length
+      ? highlights.map((label) => ({ icon: CheckCircle2, label }))
+      : [
+          {
+            icon: BedDouble,
+            label: property.configurations.length ? property.configurations.slice(0, 2).join(", ") : property.propertyType,
+          },
+          { icon: CalendarClock, label: formatPossession(property.possessionDate, property.status) },
+        ]),
   ];
 
   return (
@@ -70,11 +76,14 @@ export default function PropertyCard({ property }: { property: Property }) {
           <span className="line-clamp-1">{joinAddress(property.locality, property.city)}</span>
         </p>
 
-        <ul className="mb-4 mt-3 flex flex-wrap gap-x-3 gap-y-1.5 text-xs text-muted">
+        <ul className="mb-4 mt-3 flex flex-col gap-1.5 text-xs text-muted">
           {specs.map(({ icon: Icon, label }) => (
-            <li key={label} className="inline-flex items-center gap-1">
-              <Icon className="h-3.5 w-3.5 text-subtle" aria-hidden="true" />
-              {label}
+            <li key={label} className="flex min-w-0 items-center gap-1.5" title={label}>
+              <Icon
+                className={cn("h-3.5 w-3.5 shrink-0", Icon === CheckCircle2 ? "text-primary" : "text-subtle")}
+                aria-hidden="true"
+              />
+              <span className="truncate">{label}</span>
             </li>
           ))}
         </ul>

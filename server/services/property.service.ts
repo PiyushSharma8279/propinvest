@@ -284,6 +284,24 @@ export async function listAdminProperties(options: {
   return { items, total, page, pageSize, totalPages };
 }
 
+/** Non-deleted listings per category, split into live and total. */
+export async function getAdminCategoryCounts(): Promise<
+  Record<PropertyCategory, { total: number; live: number }>
+> {
+  const rows = await db
+    .select({
+      category: p.category,
+      total: count(),
+      live: sql<number>`count(*) filter (where ${p.isActive})`.mapWith(Number),
+    })
+    .from(p)
+    .where(eq(p.isDeleted, false))
+    .groupBy(p.category);
+  const result = { Residential: { total: 0, live: 0 }, Commercial: { total: 0, live: 0 }, Plot: { total: 0, live: 0 } };
+  for (const row of rows) result[row.category] = { total: row.total, live: row.live };
+  return result;
+}
+
 /** Distinct cities across all non-deleted listings, for the admin city filter. */
 export async function getAdminCities(): Promise<string[]> {
   const rows = await db

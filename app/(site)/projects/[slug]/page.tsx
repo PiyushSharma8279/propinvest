@@ -12,6 +12,9 @@ import {
   Home,
   KeyRound,
   LandPlot,
+  Maximize2,
+  Hammer,
+  Calculator,
   MapPin,
   Ruler,
   Sofa,
@@ -28,7 +31,7 @@ import PropertyLocation from "@/components/property/PropertyLocation";
 import RERABadge from "@/components/property/RERABadge";
 import ShareButton from "@/components/property/ShareButton";
 import { buttonClass } from "@/components/ui/Button";
-import { configurationField } from "@/lib/constants/property";
+import { configurationField, sqmPerUnit } from "@/lib/constants/property";
 import { siteConfig } from "@/lib/site-config";
 import type { Property } from "@/lib/types";
 import { cn } from "@/lib/utils/cn";
@@ -38,6 +41,8 @@ import {
   formatPossession,
   formatPriceRange,
   joinAddress,
+  formatRupees,
+  ratePerUnit,
 } from "@/lib/utils/format";
 import { getPublicPropertyBySlug, getRelatedProperties } from "@/server/services/property.service";
 
@@ -134,6 +139,9 @@ export default async function ProjectDetailPage({ params }: Props) {
     },
   ];
 
+  const rate = ratePerUnit(property.priceMin, property.areaMin, property.areaUnit, property.areaUnit, sqmPerUnit);
+  const plotRate = rate ? `₹${formatRupees(rate)}` : "";
+
   const highlights = [
     { icon: Home, label: "Type", value: property.propertyType },
     { icon: Tag, label: "Status", value: property.status },
@@ -142,6 +150,13 @@ export default async function ProjectDetailPage({ params }: Props) {
     { icon: Sofa, label: "Furnishing", value: isPlot ? "" : property.furnishing },
     { icon: FileCheck2, label: "Approved By", value: isPlot ? property.approvalAuthority : "" },
     { icon: LandPlot, label: "Corner Plot", value: isPlot && property.cornerPlot ? "Yes" : "" },
+    { icon: Maximize2, label: "Open Sides", value: isPlot && property.openSides ? String(property.openSides) : "" },
+    {
+      icon: Hammer,
+      label: "Construction",
+      value: isPlot && property.hasConstruction !== null ? (property.hasConstruction ? "Yes" : "No") : "",
+    },
+    { icon: Calculator, label: `Rate per ${property.areaUnit}`, value: isPlot ? plotRate : "" },
     { icon: UserRound, label: "Builder", value: property.builder },
     { icon: BadgeCheck, label: "RERA No.", value: property.reraNumber },
   ].filter((d) => d.value);

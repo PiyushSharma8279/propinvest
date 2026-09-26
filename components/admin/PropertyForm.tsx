@@ -10,10 +10,11 @@ import TagField from "@/components/forms/TagField";
 import { Button, LinkButton } from "@/components/ui/Button";
 import { Section } from "@/components/ui/Card";
 import { Checkbox, Field, FormAlert } from "@/components/ui/Field";
-import { inputClass } from "@/components/ui/styles";
+import { inputClass, labelClass } from "@/components/ui/styles";
 import { api, ApiError } from "@/lib/api-client";
 import {
   amenitySuggestions,
+  approvalAuthorityOptions,
   areaUnits,
   categories,
   categoryLabels,
@@ -22,15 +23,27 @@ import {
   defaultAreaUnit,
   facingOptions,
   furnishingOptions,
+  monthNames,
+  openSideOptions,
+  OTHER_AUTHORITY,
   ownershipOptions,
   possessionStatuses,
   propertyTypes,
+  sqmPerUnit,
   type PossessionStatus,
   type PropertyCategory,
 } from "@/lib/constants/property";
 import type { Property } from "@/lib/types";
 import { cn } from "@/lib/utils/cn";
-import { formatPriceRange, joinAddress, lakhToRupees, rupeesToLakh } from "@/lib/utils/format";
+import {
+  formatPriceRange,
+  formatAmountInWords,
+  formatRupees,
+  joinAddress,
+  lakhToRupees,
+  ratePerUnit,
+  rupeesToLakh,
+} from "@/lib/utils/format";
 import type { LatLng } from "@/lib/utils/maps";
 import { slugify } from "@/lib/utils/slug";
 
@@ -63,11 +76,15 @@ interface FormState {
   location: LatLng | null;
   priceMinLakh: string;
   priceMaxLakh: string;
+  /** Plots enter one total price in full rupees (e.g. 300000) instead of Lakh. */
+  priceMinRupees: string;
   areaMin: string;
   areaMax: string;
   areaUnit: string;
   status: PossessionStatus;
+  /** "01".."12" and "2031"; both empty = not announced. */
   possessionMonth: string;
+  possessionYear: string;
   reraRegistered: boolean;
   reraNumber: string;
   usps: string;
@@ -78,10 +95,20 @@ interface FormState {
   ownership: string;
   facing: string;
   furnishing: string;
+  /** One of approvalAuthorityOptions, OTHER_AUTHORITY, or "" (not specified). */
+  authorityChoice: string;
+  /** Free text, used only when authorityChoice is OTHER_AUTHORITY. */
   approvalAuthority: string;
   cornerPlot: boolean;
+  openSides: string;
+  hasConstruction: "" | "yes" | "no";
   isFeatured: boolean;
   isActive: boolean;
+}
+
+function authorityChoiceFor(value: string): string {
+  if (!value) return "";
+  return (approvalAuthorityOptions as readonly string[]).includes(value) ? value : OTHER_AUTHORITY;
 }
 
 const numberToField = (n: number | undefined) => (n ? String(n) : "");
@@ -107,11 +134,13 @@ function initialState(property: Property | undefined, category: PropertyCategory
         : null,
     priceMinLakh: numberToField(rupeesToLakh(property?.priceMin ?? 0)),
     priceMaxLakh: numberToField(rupeesToLakh(property?.priceMax ?? 0)),
+    priceMinRupees: numberToField(property?.priceMin),
     areaMin: numberToField(property?.areaMin),
     areaMax: numberToField(property?.areaMax),
     areaUnit: property?.areaUnit ?? defaultAreaUnit[cat],
     status: property?.status ?? "New Launch",
-    possessionMonth: property?.possessionDate?.slice(0, 7) ?? "",
+    possessionMonth: property?.possessionDate?.slice(5, 7) ?? "",
+    possessionYear: property?.possessionDate?.slice(0, 4) ?? "",
     reraRegistered: property?.reraRegistered ?? true,
     reraNumber: property?.reraNumber ?? "",
     usps: property?.usps.join("\n") ?? "",
@@ -122,8 +151,11 @@ function initialState(property: Property | undefined, category: PropertyCategory
     ownership: property?.ownership ?? "",
     facing: property?.facing ?? "",
     furnishing: property?.furnishing ?? "",
+    authorityChoice: authorityChoiceFor(property?.approvalAuthority ?? ""),
     approvalAuthority: property?.approvalAuthority ?? "",
     cornerPlot: property?.cornerPlot ?? false,
+    openSides: numberToField(property?.openSides),
+    hasConstruction: property?.hasConstruction == null ? "" : property.hasConstruction ? "yes" : "no",
     isFeatured: property?.isFeatured ?? false,
     isActive: property?.isActive ?? true,
   };
@@ -131,16 +163,34 @@ function initialState(property: Property | undefined, category: PropertyCategory
 
 /** Shapes the form state into the JSON body POST/PUT /api/properties expects. */
 function toRequestBody(form: FormState) {
-  const { location, priceMinLakh, priceMaxLakh, possessionMonth, usps, ...rest } = form;
+  const {
+    location,
+    priceMinLakh,
+    priceMaxLakh,
+    priceMinRupees,
+    possessionMonth,
+    possessionYear,
+    authorityChoice,
+    approvalAuthority,
+    openSides,
+    hasConstruction,
+    usps,
+    ...rest
+  } = form;
+  const isPlot = form.category === "Plot";
   return {
     ...rest,
     latitude: location?.lat ?? null,
     longitude: location?.lng ?? null,
-    priceMin: lakhToRupees(Number(priceMinLakh) || 0),
-    priceMax: lakhToRupees(Number(priceMaxLakh) || 0),
+    priceMin: isPlot ? Math.round(Number(priceMinRupees) || 0) : lakhToRupees(Number(priceMinLakh) || 0),
+    priceMax: isPlot ? Math.round(Number(priceMinRupees) || 0) : lakhToRupees(Number(priceMaxLakh) || 0),
     areaMin: Number(form.areaMin) || 0,
-    areaMax: Number(form.areaMax) || 0,
-    possessionDate: possessionMonth,
+    areaMax: isPlot ? Number(form.areaMin) || 0 : Number(form.areaMax) || 0,
+    // Month + year only; the day is always the 1st.
+    possessionDate: possessionYear && possessionMonth ? `${possessionYear}-${possessionMonth}` : "",
+    approvalAuthority: authorityChoice === OTHER_AUTHORITY ? approvalAuthority : authorityChoice,
+    openSides: Number(openSides) || 0,
+    hasConstruction: hasConstruction === "" ? null : hasConstruction === "yes",
     usps: usps.split("\n"),
   };
 }
@@ -164,6 +214,11 @@ export default function PropertyForm({
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  // Plot rate per unit, kept as typed; the total price lives in form.priceMinRupees.
+  const [rateInput, setRateInput] = useState(() =>
+    rateFrom(property?.priceMin ?? 0, property?.category === "Plot" ? property.areaMin : 0)
+  );
+  const [lastPriceEdit, setLastPriceEdit] = useState<"rate" | "total">("total");
 
   const isPlot = form.category === "Plot";
   const configField = configurationField[form.category];
@@ -205,7 +260,7 @@ export default function PropertyForm({
       } else {
         await api("/api/properties", { method: "POST", body });
       }
-      router.push(`/admin?saved=${encodeURIComponent(form.title)}`);
+      router.push(`/admin/properties?saved=${encodeURIComponent(form.title)}`);
       router.refresh();
     } catch (err) {
       if (err instanceof ApiError) {
@@ -219,10 +274,45 @@ export default function PropertyForm({
     }
   }
 
-  const pricePreview = formatPriceRange(
-    lakhToRupees(Number(form.priceMinLakh) || 0),
-    lakhToRupees(Number(form.priceMaxLakh || form.priceMinLakh) || 0)
-  );
+  // Plots have a single area and a single total price.
+  const priceMin = isPlot ? Number(form.priceMinRupees) || 0 : lakhToRupees(Number(form.priceMinLakh) || 0);
+  const priceMax = isPlot ? priceMin : lakhToRupees(Number(form.priceMaxLakh || form.priceMinLakh) || 0);
+  const pricePreview = formatPriceRange(priceMin, priceMax);
+
+  // Plot rate: total price ÷ plot area, in the unit the admin selected.
+  const plotRate = ratePerUnit(priceMin, Number(form.areaMin) || 0, form.areaUnit, form.areaUnit, sqmPerUnit);
+  const unitLabel = form.areaUnit === "sq.yd." ? "sq.yd. (Gaj)" : form.areaUnit;
+  const rateNum = Number(rateInput) || 0;
+
+  /** Rate, total price and area stay in sync: total = rate × area. */
+  function changePlotArea(value: string) {
+    const area = Number(value) || 0;
+    setForm((prev) => {
+      if (lastPriceEdit === "rate" && rateNum && area) {
+        return { ...prev, areaMin: value, priceMinRupees: String(Math.round(rateNum * area)) };
+      }
+      return { ...prev, areaMin: value };
+    });
+    if (lastPriceEdit === "total") setRateInput(rateFrom(Number(form.priceMinRupees) || 0, area));
+  }
+
+  function changePlotRate(value: string) {
+    setRateInput(value);
+    setLastPriceEdit("rate");
+    const area = Number(form.areaMin) || 0;
+    const rate = Number(value) || 0;
+    if (area) set("priceMinRupees", rate ? String(Math.round(rate * area)) : "");
+  }
+
+  function changePlotTotal(value: string) {
+    set("priceMinRupees", value);
+    setLastPriceEdit("total");
+    setRateInput(rateFrom(Number(value) || 0, Number(form.areaMin) || 0));
+  }
+
+  const thisYear = new Date().getFullYear();
+  const years = Array.from({ length: 16 }, (_, i) => String(thisYear - 2 + i));
+  if (form.possessionYear && !years.includes(form.possessionYear)) years.unshift(form.possessionYear);
   const slugPreview =
     property && property.title === form.title.trim() ? property.slug : slugify(form.title);
   const addressQuery = joinAddress(form.address, form.locality, form.city, form.state, form.pincode, form.country);
@@ -231,7 +321,7 @@ export default function PropertyForm({
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5 pb-10">
       {/* Sticky header: back link, title and the Cancel / Save buttons */}
       <div className="sticky top-[57px] z-30 -mx-4 border-b border-border bg-canvas/95 px-4 pb-4 pt-2 backdrop-blur sm:-mx-6 sm:px-6">
-        <Link href="/admin" className="inline-flex items-center gap-1 text-sm text-muted hover:text-ink">
+        <Link href="/admin/properties" className="inline-flex items-center gap-1 text-sm text-muted hover:text-ink">
           <ArrowLeft className="h-4 w-4" /> All properties
         </Link>
         <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
@@ -251,7 +341,7 @@ export default function PropertyForm({
             </p>
           </div>
           <div className="flex shrink-0 gap-2">
-            <LinkButton href="/admin" variant="outline">
+            <LinkButton href="/admin/properties" variant="outline">
               Cancel
             </LinkButton>
             <Button type="submit" loading={saving} disabled={uploading}>
@@ -375,12 +465,87 @@ export default function PropertyForm({
         />
       </Section>
 
-      <Section title={isPlot ? "Price & plot size" : "Price & size"}>
+      {isPlot ? (
+        <Section
+          title="Plot size & price"
+          description="Enter the plot area, then the rate or the total price — the other is calculated for you."
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Plot area" error={errors.areaMin}>
+              <input
+                {...bind("areaMin")}
+                onChange={(e) => changePlotArea(e.target.value)}
+                type="number"
+                min="0"
+                step="any"
+                inputMode="decimal"
+                placeholder="e.g. 100"
+              />
+            </Field>
+            <Field label="Unit" error={errors.areaUnit}>
+              <select {...bind("areaUnit")}>
+                {areaUnits.map((unit) => (
+                  <option key={unit} value={unit}>
+                    {unit === "sq.yd." ? "sq.yd. (Gaj)" : unit}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field
+              label={`Rate per ${unitLabel} (₹)`}
+              hint={<AmountHint rupees={rateNum} suffix={` per ${unitLabel}`} fallback="Fill this or the total price" />}
+            >
+              <input
+                value={rateInput}
+                onChange={(e) => changePlotRate(e.target.value)}
+                className={inputClass}
+                type="number"
+                min="0"
+                step="any"
+                inputMode="decimal"
+                placeholder="e.g. 5000"
+              />
+            </Field>
+            <Field
+              label="Total price (₹)"
+              hint={<AmountHint rupees={priceMin} fallback="Full amount, e.g. 2600000" />}
+            >
+              <input
+                {...bind("priceMinRupees")}
+                onChange={(e) => changePlotTotal(e.target.value)}
+                type="number"
+                min="0"
+                step="1"
+                inputMode="numeric"
+                placeholder="e.g. 2600000"
+              />
+            </Field>
+          </div>
+
+          <p className="-mt-1 rounded-control bg-primary-soft/60 px-3 py-2 text-sm text-muted">
+            {plotRate ? (
+              <>
+                <span className="tabular-nums font-semibold text-ink">
+                  {formatRupees(Number(form.areaMin))} {unitLabel} × ₹{formatRupees(plotRate)} = ₹{formatRupees(priceMin)}
+                </span>
+                {" · "}shows on the website as{" "}
+                <span className="tabular-nums font-semibold text-primary">{pricePreview}</span>
+              </>
+            ) : (
+              "Enter the plot area, then either the rate or the total price. The other one is calculated."
+            )}
+          </p>
+        </Section>
+      ) : (
+      <Section title="Price & size">
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Starting price (₹ Lakh)" hint="1 Crore = 100 Lakh. Leave empty for 'Price on Request'.">
+          <Field label="Starting price (₹ Lakh)" hint={<AmountHint rupees={lakhToRupees(Number(form.priceMinLakh) || 0)} fallback="1 Crore = 100 Lakh. Leave empty for 'Price on Request'." />}>
             <input {...bind("priceMinLakh")} type="number" min="0" step="0.01" inputMode="decimal" placeholder="e.g. 85" />
           </Field>
-          <Field label="Maximum price (₹ Lakh)" hint="Optional" error={errors.priceMax}>
+          <Field label="Maximum price (₹ Lakh)" hint={<AmountHint rupees={lakhToRupees(Number(form.priceMaxLakh) || 0)} fallback="Optional" />} error={errors.priceMax}>
             <input {...bind("priceMaxLakh")} type="number" min="0" step="0.01" inputMode="decimal" placeholder="e.g. 250" />
           </Field>
         </div>
@@ -390,10 +555,10 @@ export default function PropertyForm({
         </p>
 
         <div className="grid gap-4 sm:grid-cols-3">
-          <Field label={isPlot ? "Min plot area" : "Min area"}>
+          <Field label="Min area">
             <input {...bind("areaMin")} type="number" min="0" step="any" inputMode="decimal" />
           </Field>
-          <Field label={isPlot ? "Max plot area" : "Max area"} hint="Optional" error={errors.areaMax}>
+          <Field label="Max area" hint="Optional" error={errors.areaMax}>
             <input {...bind("areaMax")} type="number" min="0" step="any" inputMode="decimal" />
           </Field>
           <Field label="Unit" error={errors.areaUnit}>
@@ -418,6 +583,7 @@ export default function PropertyForm({
           />
         </div>
       </Section>
+      )}
 
       <Section
         title={isPlot ? "Plot details" : "Property details"}
@@ -441,8 +607,18 @@ export default function PropertyForm({
             </select>
           </Field>
           {isPlot ? (
-            <Field label="Approved by" hint="e.g. YEIDA, GNIDA, DTCP, HUDA">
-              <input {...bind("approvalAuthority")} />
+            <Field label="Approved by">
+              <select
+                value={form.authorityChoice}
+                onChange={(e) => set("authorityChoice", e.target.value)}
+                className={inputClass}
+              >
+                <option value="">—</option>
+                {approvalAuthorityOptions.map((o) => (
+                  <option key={o}>{o}</option>
+                ))}
+                <option value={OTHER_AUTHORITY}>Other (type it)</option>
+              </select>
             </Field>
           ) : (
             <Field label="Furnishing">
@@ -455,12 +631,40 @@ export default function PropertyForm({
             </Field>
           )}
         </div>
+        {isPlot && form.authorityChoice === OTHER_AUTHORITY && (
+          <Field label="Approving authority" hint="e.g. DTCP, HUDA, LDA">
+            <input {...bind("approvalAuthority")} placeholder="Type the authority name" autoFocus />
+          </Field>
+        )}
         {isPlot && (
-          <Checkbox
-            label="Corner plot available"
-            checked={form.cornerPlot}
-            onChange={(e) => set("cornerPlot", e.target.checked)}
-          />
+          <>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <ChoiceField label="How many sides are open?" error={errors.openSides}>
+                <ChoiceGroup
+                  name="Open sides"
+                  value={form.openSides}
+                  onChange={(v) => set("openSides", v)}
+                  options={openSideOptions.map((n) => ({ value: String(n), label: String(n) }))}
+                />
+              </ChoiceField>
+              <ChoiceField label="Any construction on the plot?">
+                <ChoiceGroup
+                  name="Construction"
+                  value={form.hasConstruction}
+                  onChange={(v) => set("hasConstruction", v as FormState["hasConstruction"])}
+                  options={[
+                    { value: "yes", label: "Yes" },
+                    { value: "no", label: "No" },
+                  ]}
+                />
+              </ChoiceField>
+            </div>
+            <Checkbox
+              label="Corner plot available"
+              checked={form.cornerPlot}
+              onChange={(e) => set("cornerPlot", e.target.checked)}
+            />
+          </>
         )}
       </Section>
 
@@ -474,11 +678,26 @@ export default function PropertyForm({
             </select>
           </Field>
           <Field
-            label="Possession month"
+            label="Possession (month & year)"
             hint="Leave empty for ready-to-move or not yet announced"
             error={errors.possessionDate}
           >
-            <input {...bind("possessionMonth")} type="month" />
+            <div className="grid grid-cols-2 gap-2">
+              <select {...bind("possessionMonth")} aria-label="Possession month">
+                <option value="">Month</option>
+                {monthNames.map((name, i) => (
+                  <option key={name} value={String(i + 1).padStart(2, "0")}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+              <select {...bind("possessionYear")} aria-label="Possession year">
+                <option value="">Year</option>
+                {years.map((y) => (
+                  <option key={y}>{y}</option>
+                ))}
+              </select>
+            </div>
           </Field>
         </div>
         <Checkbox
@@ -487,7 +706,7 @@ export default function PropertyForm({
           onChange={(e) => set("reraRegistered", e.target.checked)}
         />
         {form.reraRegistered && (
-          <Field label="RERA number" error={errors.reraNumber}>
+          <Field label="RERA number" hint="Optional" error={errors.reraNumber}>
             <input {...bind("reraNumber")} placeholder="e.g. UPRERAPRJ123456" />
           </Field>
         )}
@@ -540,5 +759,70 @@ export default function PropertyForm({
       </Section>
 
     </form>
+  );
+}
+
+/** Segmented single-choice buttons; clicking the selected option clears it. */
+function ChoiceGroup({
+  name,
+  value,
+  onChange,
+  options,
+}: {
+  name: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: { value: string; label: string }[];
+}) {
+  return (
+    <div role="radiogroup" aria-label={name} className="flex gap-2">
+      {options.map((o) => {
+        const active = o.value === value;
+        return (
+          <button
+            key={o.value}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            onClick={() => onChange(active ? "" : o.value)}
+            className={cn(
+              "h-10 min-w-12 flex-1 rounded-control border px-3 text-sm font-semibold transition",
+              active
+                ? "border-primary bg-primary text-on-primary"
+                : "border-border bg-surface text-ink hover:border-primary hover:text-primary"
+            )}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Like Field, but a div instead of a label so clicks on the caption don't press the first button. */
+function ChoiceField({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <span className={labelClass}>{label}</span>
+      {children}
+      {error && <span className="text-xs text-danger">{error}</span>}
+    </div>
+  );
+}
+
+/** Total ÷ area as an input string, rounded to 2 decimals; "" when it can't be calculated. */
+function rateFrom(total: number, area: number): string {
+  return total && area ? String(Number((total / area).toFixed(2))) : "";
+}
+
+/** "₹26,00,000 · 26 Lakh" under a price input, so large amounts are easy to read. */
+function AmountHint({ rupees, suffix = "", fallback }: { rupees: number; suffix?: string; fallback: string }) {
+  if (!rupees) return <>{fallback}</>;
+  return (
+    <>
+      ₹{formatRupees(rupees)}
+      {suffix} · <span className="font-semibold text-primary">{formatAmountInWords(rupees)}</span>
+    </>
   );
 }
