@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Building2,
   ExternalLink,
   LayoutDashboard,
   LayoutList,
@@ -16,6 +15,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import SignOutButton from "@/components/auth/SignOutButton";
+import Logo, { BrandMark } from "@/components/layout/Logo";
 import { siteConfig } from "@/lib/site-config";
 import { cn } from "@/lib/utils/cn";
 
@@ -104,15 +104,18 @@ function SidebarNav({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?
 
 function Brand({ collapsed }: { collapsed: boolean }) {
   return (
-    <Link href="/admin" className={cn("flex h-14 shrink-0 items-center gap-2.5 border-b border-border", collapsed ? "justify-center" : "px-5")}>
-      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-control bg-primary text-on-primary">
-        <Building2 className="h-4 w-4" strokeWidth={2.25} aria-hidden="true" />
-      </span>
-      {!collapsed && (
-        <span className="flex min-w-0 flex-col leading-none">
-          <span className="truncate font-bold text-ink">{siteConfig.name}</span>
-          <span className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-primary">Admin panel</span>
-        </span>
+    <Link
+      href="/admin"
+      aria-label={`${siteConfig.name} admin`}
+      className={cn("flex h-14 shrink-0 items-center border-b border-border", collapsed ? "justify-center px-2" : "px-4")}
+    >
+      {collapsed ? (
+        <BrandMark size="xs" />
+      ) : (
+        <Logo
+          size="sm"
+          subtitle={<span className="font-semibold uppercase tracking-wider text-primary">Admin panel</span>}
+        />
       )}
     </Link>
   );

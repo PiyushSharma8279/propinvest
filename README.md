@@ -60,7 +60,7 @@ server/              server-only code
   controllers/       request → validate → service → JSON response
   validators/        input validation for each controller
 proxy.ts             page protection (Next.js 16's name for middleware.ts)
-scripts/             db:seed, create-admin
+scripts/             create-admin
 ```
 
 ## Backend
@@ -104,7 +104,6 @@ scripts/             db:seed, create-admin
 
 ```bash
 npm run db:push        # apply schema changes in server/db/schema.ts to the database
-npm run db:seed        # import data/properties.json into an empty properties table
 npm run db:studio      # browse the database
 npm run create-admin -- --email you@example.com --name "Your Name" --password "a-long-password"
 ```
@@ -183,3 +182,16 @@ Natural next steps as the catalogue grows:
 - Tailwind CSS v4
 - lucide-react (icons)
 - @fontsource/fraunces, @fontsource/inter (self-hosted fonts)
+
+## Logo
+
+The brand artwork lives in `app/assets/logo.png`. The site uses two files generated from it:
+
+- `app/assets/logo-mark.png` — trimmed to the artwork with a transparent background (header, footer, admin sidebar via `components/layout/Logo.tsx`)
+- `app/icon.png` — square browser-tab icon
+
+After replacing `logo.png`, regenerate both:
+
+```bash
+node -e "const s=require('sharp');s('app/assets/logo.png').trim({threshold:20}).png().toBuffer().then(async b=>{await s(b).unflatten().resize({width:480}).png({compressionLevel:9,palette:true}).toFile('app/assets/logo-mark.png');await s(b).unflatten().resize({width:256,height:256,fit:'contain',background:{r:0,g:0,b:0,alpha:0}}).png().toFile('app/icon.png')})"
+```

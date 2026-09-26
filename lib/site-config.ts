@@ -17,10 +17,10 @@ export const siteConfig = {
   ],
   contact: {
     // Default WhatsApp business number for site-wide "talk to an advisor" CTAs.
-    // Per-project call/WhatsApp numbers live in data/properties.json.
+    // Per-project call/WhatsApp numbers are set on each listing in the admin panel.
     whatsapp: process.env.NEXT_PUBLIC_DEFAULT_WHATSAPP ?? "919716390299",
     phone: process.env.NEXT_PUBLIC_DEFAULT_PHONE ?? "+919716390299",
-    email: "hello@investsproperty.com",
+    email: "monichauhan44299@gmail.com",
   },
   social: {
     instagram: "https://instagram.com/investsproperty",

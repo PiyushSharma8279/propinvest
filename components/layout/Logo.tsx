@@ -1,31 +1,67 @@
-import { Building2 } from "lucide-react";
+import Image from "next/image";
+import logoMark from "@/app/assets/logo-mark.png";
 import { siteConfig } from "@/lib/site-config";
 import { cn } from "@/lib/utils/cn";
 
-/** Brand mark: icon + "InvestsProperty" + "by Maa Rudrani Properties". */
-export default function Logo({ tone = "dark", size = "md" }: { tone?: "light" | "dark"; size?: "sm" | "md" }) {
+/*
+ * logo-mark.png is app/assets/logo.png trimmed to the artwork with the white background
+ * made transparent. If you replace logo.png, regenerate it (see README → Logo).
+ */
+
+const markHeights = { xs: 24, sm: 32, md: 40, lg: 56 } as const;
+type MarkSize = keyof typeof markHeights;
+
+/** The logo artwork on its own — used wherever space is tight (collapsed sidebar, favicons). */
+export function BrandMark({
+  size = "md",
+  className,
+  decorative = false,
+}: {
+  size?: MarkSize;
+  className?: string;
+  /** True when the name is shown as text right next to it, so screen readers skip the image. */
+  decorative?: boolean;
+}) {
+  const height = markHeights[size];
+  const width = Math.round((height * logoMark.width) / logoMark.height);
+  return (
+    <Image
+      src={logoMark}
+      alt={decorative ? "" : siteConfig.name}
+      width={width}
+      height={height}
+      priority
+      className={cn("shrink-0 object-contain", className)}
+      style={{ width, height }}
+    />
+  );
+}
+
+/** Brand lockup: logo artwork + "InvestsProperty" + byline (or a custom subtitle). */
+export default function Logo({
+  tone = "dark",
+  size = "md",
+  subtitle = siteConfig.byline,
+}: {
+  tone?: "light" | "dark";
+  size?: "sm" | "md";
+  subtitle?: React.ReactNode;
+}) {
   return (
     <span className="flex items-center gap-2.5">
-      <span
-        className={cn(
-          "grid shrink-0 place-items-center rounded-control bg-primary text-on-primary",
-          size === "md" ? "h-10 w-10" : "h-8 w-8"
-        )}
-      >
-        <Building2 className={size === "md" ? "h-5 w-5" : "h-4 w-4"} strokeWidth={2.25} aria-hidden="true" />
-      </span>
-      <span className="flex flex-col leading-none">
+      <BrandMark size={size} decorative />
+      <span className="flex min-w-0 flex-col leading-none">
         <span
           className={cn(
-            "font-display font-bold tracking-tight",
+            "truncate font-display font-bold tracking-tight",
             size === "md" ? "text-lg" : "text-base",
             tone === "light" ? "text-on-primary" : "text-ink"
           )}
         >
           {siteConfig.name}
         </span>
-        <span className={cn("mt-1 text-[11px] font-medium", tone === "light" ? "text-on-primary/70" : "text-muted")}>
-          {siteConfig.byline}
+        <span className={cn("mt-1 truncate text-[11px] font-medium", tone === "light" ? "text-on-primary/70" : "text-muted")}>
+          {subtitle}
         </span>
       </span>
     </span>
