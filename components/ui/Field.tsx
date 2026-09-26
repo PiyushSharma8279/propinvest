@@ -20,7 +20,7 @@ export function Field({
       <span className={labelClass}>{label}</span>
       {children}
       {error ? (
-        <span className="text-xs text-rust-600">{error}</span>
+        <span className="text-xs text-danger">{error}</span>
       ) : (
         hint && <span className={hintClass}>{hint}</span>
       )}
@@ -34,11 +34,11 @@ export function Checkbox({
   ...props
 }: React.InputHTMLAttributes<HTMLInputElement> & { label: string; description?: string }) {
   return (
-    <label className="flex items-start gap-2 text-sm text-ink-900">
-      <input type="checkbox" className="mt-0.5 h-4 w-4 accent-teal-900" {...props} />
+    <label className="flex items-start gap-2 text-sm text-ink">
+      <input type="checkbox" className="mt-0.5 h-4 w-4 accent-primary" {...props} />
       <span>
         <span className="font-medium">{label}</span>
-        {description && <span className="block text-slate-600">{description}</span>}
+        {description && <span className="block text-muted">{description}</span>}
       </span>
     </label>
   );
@@ -49,7 +49,7 @@ export function FormAlert({ children }: { children: React.ReactNode }) {
   return (
     <p
       role="alert"
-      className="rounded-md border border-rust-600/30 bg-rust-600/10 px-4 py-3 text-sm text-rust-600"
+      className="rounded-md border border-danger/30 bg-danger-soft px-4 py-3 text-sm text-danger"
     >
       {children}
     </p>

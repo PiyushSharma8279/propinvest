@@ -3,17 +3,16 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Menu, UserRound, X } from "lucide-react";
+import { LayoutDashboard, Mail, Menu, Phone, UserRound, X } from "lucide-react";
 import SignOutButton from "@/components/auth/SignOutButton";
 import WhatsAppButton from "@/components/property/WhatsAppButton";
 import { siteConfig } from "@/lib/site-config";
 import type { SessionUser } from "@/lib/types";
+import { cn } from "@/lib/utils/cn";
 import Logo from "./Logo";
 
 const navLinks = [
-  { href: "/projects?category=Residential", label: "Residential" },
-  { href: "/projects?category=Commercial", label: "Commercial" },
-  { href: "/projects?category=Plot", label: "Plots" },
+  { href: "/projects", label: "Properties" },
   { href: "/about", label: "About" },
   { href: "/#contact", label: "Contact" },
 ];
@@ -44,10 +43,16 @@ function useSessionUser() {
   return user;
 }
 
+/** Highlights the nav link for the current page (path only, so static pages stay static). */
+function useIsActive() {
+  const pathname = usePathname();
+  return (href: string) => !href.includes("?") && !href.includes("#") && href === pathname;
+}
+
 function AccountLinks({ user, mobile = false }: { user: SessionUser | null | undefined; mobile?: boolean }) {
   const linkClass = mobile
-    ? "flex items-center gap-2 py-1 text-cream/90"
-    : "inline-flex items-center gap-1 text-cream/90 transition hover:text-gold-600";
+    ? "flex items-center gap-2 py-1 text-ink"
+    : "inline-flex items-center gap-1 text-muted transition hover:text-primary";
 
   // No public sign-in link: visitors don't have accounts. Admins go to /login directly.
   if (!user) return null;
@@ -70,17 +75,42 @@ function AccountLinks({ user, mobile = false }: { user: SessionUser | null | und
 export default function Header() {
   const [open, setOpen] = useState(false);
   const user = useSessionUser();
+  const isActive = useIsActive();
 
   return (
-    <header className="sticky top-0 z-50 border-b border-teal-900/10 bg-gradient-to-r from-teal-900 to-teal-700 text-cream">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+    <header className="sticky top-0 z-50 border-b border-border bg-surface/95 backdrop-blur">
+      {/* Slim contact bar */}
+      <div className="hidden border-b border-border sm:block">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-1.5 text-xs text-muted sm:px-6">
+          <div className="flex items-center gap-5">
+            <a href={`tel:${siteConfig.contact.phone}`} className="inline-flex items-center gap-1.5 hover:text-primary">
+              <Phone className="h-3.5 w-3.5" aria-hidden="true" />
+              {siteConfig.contact.phone}
+            </a>
+            <a href={`mailto:${siteConfig.contact.email}`} className="inline-flex items-center gap-1.5 hover:text-primary">
+              <Mail className="h-3.5 w-3.5" aria-hidden="true" />
+              {siteConfig.contact.email}
+            </a>
+          </div>
+          <p className="hidden md:block">RERA-verified listings only</p>
+        </div>
+      </div>
+
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <Link href="/" className="shrink-0">
           <Logo />
         </Link>
 
-        <nav className="hidden items-center gap-5 text-sm font-medium lg:flex">
+        <nav className="hidden items-center gap-1 text-sm font-medium lg:flex">
           {navLinks.map((link) => (
-            <Link key={link.href} href={link.href} className="text-cream/90 transition hover:text-gold-600">
+            <Link
+              key={link.href}
+              href={link.href}
+              className={cn(
+                "rounded-full px-3 py-1.5 transition",
+                isActive(link.href) ? "bg-primary-soft text-primary" : "text-muted hover:text-ink"
+              )}
+            >
               {link.label}
             </Link>
           ))}
@@ -97,25 +127,32 @@ export default function Header() {
 
         <button
           type="button"
-          className="grid h-9 w-9 place-items-center rounded-md text-cream lg:hidden"
+          className="grid h-10 w-10 place-items-center rounded-control border border-border text-ink lg:hidden"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           aria-label={open ? "Close menu" : "Open menu"}
         >
-          {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </div>
 
       {open && (
-        <div className="border-t border-cream/10 bg-teal-900 px-4 py-4 lg:hidden">
-          <nav className="flex flex-col gap-3 text-sm font-medium" onClick={() => setOpen(false)}>
+        <div className="border-t border-border bg-surface px-4 py-4 lg:hidden">
+          <nav className="flex flex-col gap-1 text-sm font-medium" onClick={() => setOpen(false)}>
             {navLinks.map((link) => (
-              <Link key={link.href} href={link.href} className="py-1 text-cream/90">
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  "rounded-control px-3 py-2",
+                  isActive(link.href) ? "bg-primary-soft text-primary" : "text-ink hover:bg-surface-muted"
+                )}
+              >
                 {link.label}
               </Link>
             ))}
             {user && (
-              <div className="flex flex-col gap-3 border-t border-cream/10 pt-3">
+              <div className="mt-2 flex flex-col gap-3 border-t border-border px-3 pt-3">
                 <AccountLinks user={user} mobile />
               </div>
             )}

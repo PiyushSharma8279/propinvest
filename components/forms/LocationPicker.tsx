@@ -101,7 +101,7 @@ export default function LocationPicker({ value, onChange, addressQuery, error }:
 
       <div className="grid grid-cols-2 gap-3">
         <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium text-ink-900">Latitude</span>
+          <span className="font-medium text-ink">Latitude</span>
           <input
             type="number"
             step="any"
@@ -112,7 +112,7 @@ export default function LocationPicker({ value, onChange, addressQuery, error }:
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium text-ink-900">Longitude</span>
+          <span className="font-medium text-ink">Longitude</span>
           <input
             type="number"
             step="any"
@@ -124,11 +124,11 @@ export default function LocationPicker({ value, onChange, addressQuery, error }:
         </label>
       </div>
 
-      <p className="flex items-start gap-1 text-xs text-slate-600">
+      <p className="flex items-start gap-1 text-xs text-muted">
         <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
         {message ?? "Click the map or drag the pin to the property's exact location."}
       </p>
-      {error && <p className="text-sm text-rust-600">{error}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
     </div>
   );
 }

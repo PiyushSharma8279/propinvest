@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Building, Building2, LandPlot } from "lucide-react";
+import { ArrowLeft, Building, Building2, LandPlot } from "lucide-react";
 import ImageUpload from "@/components/forms/ImageUpload";
 import LocationPicker from "@/components/forms/LocationPicker";
 import TagField from "@/components/forms/TagField";
@@ -147,9 +148,15 @@ function toRequestBody(form: FormState) {
 export default function PropertyForm({
   property,
   defaultCategory = "Residential",
+  title,
+  headerExtra,
 }: {
   property?: Property;
   defaultCategory?: PropertyCategory;
+  /** Page heading shown in the sticky header next to Cancel / Save. */
+  title: string;
+  /** Optional link under the heading (e.g. "View on website"). */
+  headerExtra?: React.ReactNode;
 }) {
   const router = useRouter();
   const [form, setForm] = useState<FormState>(() => initialState(property, defaultCategory));
@@ -171,7 +178,7 @@ export default function PropertyForm({
       value: form[key] as string,
       onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
         set(key, e.target.value as FormState[typeof key]),
-      className: cn(inputClass, errors[key] && "border-rust-600"),
+      className: cn(inputClass, errors[key] && "border-danger"),
     };
   }
 
@@ -221,7 +228,39 @@ export default function PropertyForm({
   const addressQuery = joinAddress(form.address, form.locality, form.city, form.state, form.pincode, form.country);
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5 pb-28">
+    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5 pb-10">
+      {/* Sticky header: back link, title and the Cancel / Save buttons */}
+      <div className="sticky top-[57px] z-30 -mx-4 border-b border-border bg-canvas/95 px-4 pb-4 pt-2 backdrop-blur sm:-mx-6 sm:px-6">
+        <Link href="/admin" className="inline-flex items-center gap-1 text-sm text-muted hover:text-ink">
+          <ArrowLeft className="h-4 w-4" /> All properties
+        </Link>
+        <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="truncate text-2xl font-bold text-ink">{title}</h1>
+            <p className="mt-0.5 truncate text-sm text-muted">
+              {uploading ? (
+                "Waiting for images to finish uploading…"
+              ) : formError ? (
+                <span className="text-danger">{formError}</span>
+              ) : (
+                <>
+                  {categoryLabels[form.category]} · {form.propertyType}
+                  {headerExtra && <span className="ml-3">{headerExtra}</span>}
+                </>
+              )}
+            </p>
+          </div>
+          <div className="flex shrink-0 gap-2">
+            <LinkButton href="/admin" variant="outline">
+              Cancel
+            </LinkButton>
+            <Button type="submit" loading={saving} disabled={uploading}>
+              {saving ? "Saving…" : property ? "Save changes" : "Add property"}
+            </Button>
+          </div>
+        </div>
+      </div>
+
       <FormAlert>{formError}</FormAlert>
 
       <Section title="Property category" description="Pick what you're listing. The form adapts to it.">
@@ -238,20 +277,20 @@ export default function PropertyForm({
                 onClick={() => changeCategory(c)}
                 className={cn(
                   "flex items-start gap-3 rounded-lg border-2 p-3 text-left transition",
-                  active ? "border-teal-900 bg-teal-100" : "border-border bg-white hover:border-teal-600"
+                  active ? "border-primary bg-primary-soft" : "border-border bg-surface hover:border-primary"
                 )}
               >
                 <span
                   className={cn(
                     "grid h-9 w-9 shrink-0 place-items-center rounded-full",
-                    active ? "bg-teal-900 text-cream" : "bg-cream-200 text-teal-900"
+                    active ? "bg-primary text-on-primary" : "bg-surface-muted text-primary"
                   )}
                 >
                   <Icon className="h-4 w-4" aria-hidden="true" />
                 </span>
                 <span>
-                  <span className="block font-semibold text-ink-900">{categoryLabels[c]}</span>
-                  <span className="block text-xs text-slate-600">{categoryBlurbs[c]}</span>
+                  <span className="block font-semibold text-ink">{categoryLabels[c]}</span>
+                  <span className="block text-xs text-muted">{categoryBlurbs[c]}</span>
                 </span>
               </button>
             );
@@ -277,7 +316,7 @@ export default function PropertyForm({
             hint={
               slugPreview ? (
                 <>
-                  Web address: <span className="font-medium text-ink-900">/projects/{slugPreview}</span>
+                  Web address: <span className="font-medium text-ink">/projects/{slugPreview}</span>
                   {!property && " (a number is added if it's taken)"}
                 </>
               ) : (
@@ -345,9 +384,9 @@ export default function PropertyForm({
             <input {...bind("priceMaxLakh")} type="number" min="0" step="0.01" inputMode="decimal" placeholder="e.g. 250" />
           </Field>
         </div>
-        <p className="-mt-1 text-sm text-slate-600">
+        <p className="-mt-1 text-sm text-muted">
           Shows on the website as{" "}
-          <span className="tabular-nums font-semibold text-teal-900">{pricePreview}</span>
+          <span className="tabular-nums font-semibold text-primary">{pricePreview}</span>
         </p>
 
         <div className="grid gap-4 sm:grid-cols-3">
@@ -369,7 +408,7 @@ export default function PropertyForm({
         </div>
 
         <div className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-ink-900">{configField.label}</span>
+          <span className="text-sm font-medium text-ink">{configField.label}</span>
           <TagField
             name="configurations"
             values={form.configurations}
@@ -500,27 +539,6 @@ export default function PropertyForm({
         />
       </Section>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <p className="min-w-0 truncate text-sm text-slate-600">
-            {uploading ? (
-              "Waiting for images to finish uploading…"
-            ) : formError ? (
-              <span className="text-rust-600">{formError}</span>
-            ) : (
-              `${categoryLabels[form.category]} · ${form.propertyType}`
-            )}
-          </p>
-          <div className="flex shrink-0 gap-2">
-            <LinkButton href="/admin" variant="outline">
-              Cancel
-            </LinkButton>
-            <Button type="submit" loading={saving} disabled={uploading}>
-              {saving ? "Saving…" : property ? "Save changes" : "Add property"}
-            </Button>
-          </div>
-        </div>
-      </div>
     </form>
   );
 }

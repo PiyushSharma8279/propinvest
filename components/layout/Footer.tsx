@@ -4,56 +4,54 @@ import { siteConfig } from "@/lib/site-config";
 import { getLocationOptions } from "@/server/services/property.service";
 import Logo from "./Logo";
 
+const exploreLinks = [
+  { href: "/projects", label: "All Projects" },
+  { href: "/about", label: "About Us" },
+  { href: "/projects?category=Residential", label: "Residential" },
+  { href: "/projects?category=Commercial", label: "Commercial" },
+  { href: "/projects?category=Plot", label: "Plots & Land" },
+  { href: "/projects?possession=ready+to+move", label: "Ready to Move" },
+  { href: "/projects?possession=new+launch", label: "New Launches" },
+  { href: "/projects?rera=true", label: "RERA Verified Only" },
+];
+
+const headingClass = "text-sm font-semibold text-ink";
+const linkClass = "text-muted transition hover:text-primary";
+
 export default async function Footer() {
   const { cities } = await getLocationOptions();
 
   return (
-    <footer id="contact" className="border-t border-border bg-teal-900 text-cream/90">
-      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 md:grid-cols-4">
+    <footer id="contact" className="border-t border-border bg-surface">
+      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6">
+        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1.3fr]">
           <div>
             <Logo size="sm" />
-            <p className="mt-3 text-sm text-cream/70">{siteConfig.description}</p>
-            <div className="mt-4 flex gap-4 text-sm">
-              <a href={siteConfig.social.instagram} className="text-cream/70 hover:text-gold-600">
-                Instagram
-              </a>
-              <a href={siteConfig.social.facebook} className="text-cream/70 hover:text-gold-600">
-                Facebook
-              </a>
-              <a href={siteConfig.social.linkedin} className="text-cream/70 hover:text-gold-600">
-                LinkedIn
-              </a>
+            <p className="mt-4 text-sm leading-relaxed text-muted">{siteConfig.description}</p>
+            <div className="mt-4 flex gap-4 text-sm font-medium">
+              <a href={siteConfig.social.instagram} className={linkClass}>Instagram</a>
+              <a href={siteConfig.social.facebook} className={linkClass}>Facebook</a>
+              <a href={siteConfig.social.linkedin} className={linkClass}>LinkedIn</a>
             </div>
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-gold-600">
-              Explore
-            </h3>
-            <ul className="mt-3 space-y-2 text-sm">
-              <li><Link href="/projects" className="text-cream/70 hover:text-cream">All Projects</Link></li>
-              <li><Link href="/about" className="text-cream/70 hover:text-cream">About Us</Link></li>
-              <li><Link href="/projects?category=Residential" className="text-cream/70 hover:text-cream">Residential</Link></li>
-              <li><Link href="/projects?category=Commercial" className="text-cream/70 hover:text-cream">Commercial</Link></li>
-              <li><Link href="/projects?category=Plot" className="text-cream/70 hover:text-cream">Plots &amp; Land</Link></li>
-              <li><Link href="/projects?possession=ready+to+move" className="text-cream/70 hover:text-cream">Ready to Move</Link></li>
-              <li><Link href="/projects?possession=new+launch" className="text-cream/70 hover:text-cream">New Launches</Link></li>
-              <li><Link href="/projects?rera=true" className="text-cream/70 hover:text-cream">RERA Verified Only</Link></li>
+            <h3 className={headingClass}>Explore</h3>
+            <ul className="mt-4 space-y-2.5 text-sm">
+              {exploreLinks.map((link) => (
+                <li key={link.href}>
+                  <Link href={link.href} className={linkClass}>{link.label}</Link>
+                </li>
+              ))}
             </ul>
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-gold-600">
-              Cities
-            </h3>
-            <ul className="mt-3 space-y-2 text-sm">
+            <h3 className={headingClass}>Cities</h3>
+            <ul className="mt-4 space-y-2.5 text-sm">
               {cities.slice(0, 8).map((city) => (
                 <li key={city}>
-                  <Link
-                    href={`/projects?city=${encodeURIComponent(city)}`}
-                    className="text-cream/70 hover:text-cream"
-                  >
+                  <Link href={`/projects?city=${encodeURIComponent(city)}`} className={linkClass}>
                     Projects in {city}
                   </Link>
                 </li>
@@ -62,19 +60,21 @@ export default async function Footer() {
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-gold-600">
-              Contact
-            </h3>
-            <ul className="mt-3 space-y-2 text-sm">
-              <li className="flex items-center gap-2 text-cream/70">
-                <Phone className="h-4 w-4 shrink-0" />
-                <a href={`tel:${siteConfig.contact.phone}`} className="hover:text-cream">
+            <h3 className={headingClass}>Contact</h3>
+            <ul className="mt-4 space-y-3 text-sm">
+              <li>
+                <a href={`tel:${siteConfig.contact.phone}`} className={`flex min-w-0 items-center gap-2.5 break-all ${linkClass}`}>
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary-soft text-primary">
+                    <Phone className="h-4 w-4" />
+                  </span>
                   {siteConfig.contact.phone}
                 </a>
               </li>
-              <li className="flex items-center gap-2 text-cream/70">
-                <Mail className="h-4 w-4 shrink-0" />
-                <a href={`mailto:${siteConfig.contact.email}`} className="hover:text-cream">
+              <li>
+                <a href={`mailto:${siteConfig.contact.email}`} className={`flex min-w-0 items-center gap-2.5 break-all ${linkClass}`}>
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary-soft text-primary">
+                    <Mail className="h-4 w-4" />
+                  </span>
                   {siteConfig.contact.email}
                 </a>
               </li>
@@ -82,7 +82,7 @@ export default async function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 border-t border-cream/10 pt-6 text-xs leading-relaxed text-cream/50">
+        <div className="mt-12 border-t border-border pt-6 text-xs leading-relaxed text-subtle">
           <p>
             RERA disclaimer: {siteConfig.name} is an intermediary real estate listing
             platform. Project images, prices, and possession dates are indicative and

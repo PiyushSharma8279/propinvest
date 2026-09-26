@@ -9,7 +9,7 @@ import type { LatLng } from "@/lib/utils/maps";
 /** Brand-coloured pin (avoids Leaflet's default marker images, which bundlers break). */
 const pinIcon = L.divIcon({
   className: "pi-map-pin",
-  html: `<svg viewBox="0 0 24 32" width="32" height="42" aria-hidden="true"><path d="M12 0C5.4 0 0 5.3 0 11.9 0 20.8 12 32 12 32s12-11.2 12-20.1C24 5.3 18.6 0 12 0z" fill="#0b3b36"/><circle cx="12" cy="12" r="5" fill="#c9973e"/></svg>`,
+  html: `<svg viewBox="0 0 24 32" width="32" height="42" aria-hidden="true"><path d="M12 0C5.4 0 0 5.3 0 11.9 0 20.8 12 32 12 32s12-11.2 12-20.1C24 5.3 18.6 0 12 0z" class="pin-body"/><circle cx="12" cy="12" r="5" class="pin-dot"/></svg>`,
   iconSize: [32, 42],
   iconAnchor: [16, 42],
 });

@@ -21,6 +21,7 @@ import type {
   AdminPropertyView,
   LocationOptions,
   Paginated,
+  PossessionStatus,
   Property,
   PropertyCategory,
   PropertyFilters,
@@ -214,13 +215,29 @@ const adminViewCondition: Record<AdminPropertyView, SQL> = {
   deleted: eq(p.isDeleted, true),
 };
 
+export const adminSortColumns = {
+  title: p.title,
+  city: p.city,
+  price: p.priceMin,
+  updated: p.updatedAt,
+} as const;
+export type AdminSortColumn = keyof typeof adminSortColumns;
+
 export async function listAdminProperties(options: {
   view: AdminPropertyView;
   category?: PropertyCategory;
+  status?: PossessionStatus;
+  city?: string;
   q?: string;
-}): Promise<Property[]> {
+  sort?: AdminSortColumn;
+  dir?: "asc" | "desc";
+  page?: number;
+  pageSize?: number;
+}): Promise<Paginated<Property>> {
   const where: SQL[] = [adminViewCondition[options.view]];
   if (options.category) where.push(eq(p.category, options.category));
+  if (options.status) where.push(eq(p.status, options.status));
+  if (options.city) where.push(eq(p.city, options.city));
   if (options.q) {
     const pattern = `%${likeEscape(options.q)}%`;
     where.push(
@@ -233,11 +250,48 @@ export async function listAdminProperties(options: {
       )!
     );
   }
-  return db
-    .select()
+
+  const pageSize = options.pageSize ?? 10;
+  const column = adminSortColumns[options.sort ?? "updated"];
+  const order = options.dir === "asc" ? asc(column) : desc(column);
+  const condition = and(...where);
+
+  const [[{ total }], firstPass] = await Promise.all([
+    db.select({ total: count() }).from(p).where(condition),
+    db
+      .select()
+      .from(p)
+      .where(condition)
+      .orderBy(order, desc(p.id))
+      .limit(pageSize)
+      .offset(((options.page ?? 1) - 1) * pageSize),
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const page = Math.min(Math.max(1, options.page ?? 1), totalPages);
+  // A page past the end (e.g. after deleting the last row) falls back to the last page.
+  const items =
+    page === (options.page ?? 1)
+      ? firstPass
+      : await db
+          .select()
+          .from(p)
+          .where(condition)
+          .orderBy(order, desc(p.id))
+          .limit(pageSize)
+          .offset((page - 1) * pageSize);
+
+  return { items, total, page, pageSize, totalPages };
+}
+
+/** Distinct cities across all non-deleted listings, for the admin city filter. */
+export async function getAdminCities(): Promise<string[]> {
+  const rows = await db
+    .selectDistinct({ city: p.city })
     .from(p)
-    .where(and(...where))
-    .orderBy(desc(p.updatedAt));
+    .where(and(eq(p.isDeleted, false), ne(p.city, "")))
+    .orderBy(asc(p.city));
+  return rows.map((r) => r.city);
 }
 
 export async function getAdminCounts(): Promise<Record<AdminPropertyView, number>> {

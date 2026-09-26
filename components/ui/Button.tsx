@@ -2,15 +2,16 @@ import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
-type Variant = "primary" | "gold" | "outline" | "ghost" | "danger";
+type Variant = "primary" | "soft" | "gold" | "outline" | "ghost" | "danger";
 type Size = "sm" | "md";
 
 const variants: Record<Variant, string> = {
-  primary: "bg-teal-900 text-cream hover:bg-teal-700",
-  gold: "bg-gold-600 text-ink-900 hover:bg-gold-600/90",
-  outline: "border border-border bg-white text-ink-900 hover:border-teal-900",
-  ghost: "text-slate-600 hover:bg-cream-200 hover:text-ink-900",
-  danger: "text-rust-600 hover:bg-rust-600/10",
+  primary: "bg-primary text-on-primary hover:bg-primary-hover",
+  gold: "bg-highlight text-ink hover:bg-highlight/90",
+  soft: "bg-primary-soft text-primary hover:bg-primary hover:text-on-primary",
+  outline: "border border-border bg-surface text-ink hover:border-primary hover:text-primary",
+  ghost: "text-muted hover:bg-surface-muted hover:text-ink",
+  danger: "text-danger hover:bg-danger-soft",
 };
 
 const sizes: Record<Size, string> = {
@@ -20,7 +21,7 @@ const sizes: Record<Size, string> = {
 
 export function buttonClass(variant: Variant = "primary", size: Size = "md", className?: string) {
   return cn(
-    "inline-flex items-center justify-center gap-1.5 rounded-md font-semibold transition disabled:cursor-not-allowed disabled:opacity-60",
+    "inline-flex items-center justify-center gap-1.5 rounded-control font-semibold transition disabled:cursor-not-allowed disabled:opacity-60",
     variants[variant],
     sizes[size],
     className

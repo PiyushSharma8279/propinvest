@@ -9,14 +9,14 @@ export default function SortSelect() {
   const searchParams = useSearchParams();
 
   return (
-    <label className="flex items-center gap-2 text-sm text-slate-600">
+    <label className="flex items-center gap-2 text-sm text-muted">
       Sort by
       <select
         defaultValue={searchParams.get("sort") ?? ""}
         onChange={(e) =>
           router.push(projectsUrl(new URLSearchParams(searchParams), { sort: e.target.value || null }))
         }
-        className="rounded-md border border-border bg-white px-2 py-1.5 text-sm font-medium text-ink-900"
+        className="rounded-control border border-border bg-surface px-3 py-2 text-sm font-medium text-ink"
       >
         {sortOptions.map((opt) => (
           <option key={opt.value} value={opt.value}>

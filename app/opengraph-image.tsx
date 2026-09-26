@@ -4,6 +4,7 @@ import { siteConfig } from "@/lib/site-config";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
+// Satori (next/og) cannot read CSS variables; these hex values mirror --pi-surface, --pi-primary-soft, --pi-ink and --pi-primary in app/globals.css.
 export default function OpengraphImage() {
   return new ImageResponse(
     (
@@ -15,8 +16,8 @@ export default function OpengraphImage() {
           flexDirection: "column",
           justifyContent: "center",
           padding: "80px",
-          background: "linear-gradient(135deg, #0b3b36 0%, #146b5f 100%)",
-          color: "#f7f5f0",
+          background: "linear-gradient(135deg, #ffffff 0%, #e8f5ef 100%)",
+          color: "#111827",
           fontFamily: "sans-serif",
         }}
       >
@@ -33,7 +34,7 @@ export default function OpengraphImage() {
               width: 56,
               height: 56,
               borderRadius: "50%",
-              background: "#c9973e",
+              background: "#10845c",
               display: "flex",
             }}
           />

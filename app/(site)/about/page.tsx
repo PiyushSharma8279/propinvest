@@ -50,11 +50,11 @@ export default function AboutPage() {
           { label: "About", href: "/about" },
         ]}
       />
-      <h1 className="mt-4 font-display text-3xl font-semibold text-ink-900 sm:text-4xl">
+      <h1 className="mt-4 font-display text-3xl font-semibold text-ink sm:text-4xl">
         About {siteConfig.name}
       </h1>
-      <p className="mt-1 font-medium text-gold-600">{siteConfig.byline}</p>
-      <p className="mt-6 text-lg text-slate-600">
+      <p className="mt-1 font-medium text-highlight">{siteConfig.byline}</p>
+      <p className="mt-6 text-lg text-muted">
         {siteConfig.name} is a real estate platform by Maa Rudrani Properties. We help buyers and
         investors find verified residential projects, commercial spaces and plots, compare them
         side by side, and talk directly to the people building them.
@@ -62,12 +62,12 @@ export default function AboutPage() {
 
       <div className="mt-10 grid gap-6 sm:grid-cols-2">
         {values.map(({ icon: Icon, title, body }) => (
-          <div key={title} className="rounded-lg border border-border bg-white p-5">
-            <span className="grid h-10 w-10 place-items-center rounded-full bg-teal-900 text-cream">
+          <div key={title} className="rounded-card border border-border bg-surface shadow-card p-5">
+            <span className="grid h-10 w-10 place-items-center rounded-full bg-primary text-on-primary">
               <Icon className="h-5 w-5" aria-hidden="true" />
             </span>
-            <h2 className="mt-3 font-display text-lg font-semibold text-ink-900">{title}</h2>
-            <p className="mt-1 text-sm text-slate-600">{body}</p>
+            <h2 className="mt-3 font-display text-lg font-semibold text-ink">{title}</h2>
+            <p className="mt-1 text-sm text-muted">{body}</p>
           </div>
         ))}
       </div>

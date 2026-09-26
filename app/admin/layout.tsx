@@ -15,19 +15,19 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const admin = await requireAdminPage();
 
   return (
-    <div className="min-h-screen bg-cream-200/60">
-      <header className="sticky top-0 z-40 bg-teal-900 text-cream">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+    <div className="min-h-screen bg-canvas">
+      <header className="sticky top-0 z-40 border-b border-border bg-surface/95 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <Link href="/admin" className="flex items-center gap-2">
             <Logo size="sm" />
-            <span className="hidden rounded bg-cream/10 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-gold-100 sm:inline">
+            <span className="hidden rounded-full bg-primary-soft px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-primary sm:inline">
               Admin
             </span>
           </Link>
           <nav className="flex items-center gap-1 text-sm sm:gap-3">
             <Link
               href="/admin/properties/new"
-              className="inline-flex items-center gap-1 rounded-md bg-gold-600 px-3 py-1.5 font-semibold text-ink-900 hover:bg-gold-600/90"
+              className="inline-flex items-center gap-1 rounded-control bg-primary px-3 py-1.5 font-semibold text-on-primary hover:bg-primary-hover"
             >
               <Plus className="h-4 w-4" aria-hidden="true" />
               <span className="hidden sm:inline">Add Property</span>
@@ -36,17 +36,17 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <Link
               href="/"
               target="_blank"
-              className="inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-cream/80 hover:text-cream"
+              className="inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-muted hover:text-ink"
             >
               <ExternalLink className="h-4 w-4" aria-hidden="true" />
               <span className="hidden sm:inline">View site</span>
             </Link>
-            <span className="hidden text-cream/60 md:inline">{admin.name}</span>
-            <SignOutButton className="rounded-md px-2 py-1.5 text-cream/80 hover:text-cream [&>span]:hidden sm:[&>span]:inline" />
+            <span className="hidden text-muted md:inline">{admin.name}</span>
+            <SignOutButton className="rounded-md px-2 py-1.5 text-muted hover:text-ink [&>span]:hidden sm:[&>span]:inline" />
           </nav>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">{children}</main>
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">{children}</main>
     </div>
   );
 }

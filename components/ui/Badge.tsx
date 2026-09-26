@@ -1,10 +1,11 @@
 import { cn } from "@/lib/utils/cn";
 
 const tones = {
-  neutral: "bg-cream-200 text-slate-600",
-  gold: "bg-gold-100 text-ink-900",
-  teal: "bg-teal-100 text-teal-900",
-  danger: "bg-rust-600/10 text-rust-600",
+  neutral: "bg-surface-muted text-muted",
+  gold: "bg-highlight-soft text-ink",
+  teal: "bg-primary-soft text-primary",
+  danger: "bg-danger-soft text-danger",
+  info: "bg-info-soft text-info",
 };
 
 export function Badge({
@@ -17,7 +18,7 @@ export function Badge({
   return (
     <span
       className={cn(
-        "rounded px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide",
+        "rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide",
         tones[tone]
       )}
     >

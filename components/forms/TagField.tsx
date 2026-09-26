@@ -51,14 +51,14 @@ export default function TagField({
           {values.map((value) => (
             <li
               key={value}
-              className="inline-flex items-center gap-1 rounded-full bg-teal-900 py-1 pl-3 pr-1 text-sm text-cream"
+              className="inline-flex items-center gap-1 rounded-full bg-primary py-1 pl-3 pr-1 text-sm text-on-primary"
             >
               {value}
               <button
                 type="button"
                 onClick={() => toggle(value)}
                 aria-label={`Remove ${value}`}
-                className="grid h-5 w-5 place-items-center rounded-full hover:bg-cream/20"
+                className="grid h-5 w-5 place-items-center rounded-full hover:bg-white/20"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -87,7 +87,7 @@ export default function TagField({
             add(draft);
             setDraft("");
           }}
-          className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border bg-white px-3 text-sm font-medium text-ink-900 hover:border-teal-900"
+          className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border bg-surface px-3 text-sm font-medium text-ink hover:border-primary"
         >
           <Plus className="h-4 w-4" /> Add
         </button>
@@ -100,7 +100,7 @@ export default function TagField({
               key={preset}
               type="button"
               onClick={() => toggle(preset)}
-              className="rounded-full border border-dashed border-border bg-white px-2.5 py-1 text-xs text-slate-600 hover:border-teal-600 hover:text-teal-900"
+              className="rounded-full border border-dashed border-border bg-surface px-2.5 py-1 text-xs text-muted hover:border-primary hover:text-primary"
             >
               + {preset}
             </button>

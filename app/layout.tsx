@@ -1,7 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import "@fontsource/fraunces/500.css";
-import "@fontsource/fraunces/600.css";
-import "@fontsource/fraunces/700.css";
 import "@fontsource/inter/400.css";
 import "@fontsource/inter/500.css";
 import "@fontsource/inter/600.css";
@@ -49,7 +46,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#0b3b36",
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -71,7 +68,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <html lang="en-IN">
-      <body className="flex min-h-screen flex-col bg-cream text-ink-900 antialiased">
+      <body className="flex min-h-screen flex-col bg-canvas text-ink antialiased">
         <JsonLd data={organizationJsonLd} />
         {children}
       </body>

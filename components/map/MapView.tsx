@@ -6,7 +6,7 @@ import type { LeafletMapProps } from "./LeafletMap";
 /** Leaflet needs `window`, so the map is only rendered in the browser. */
 const LeafletMap = dynamic(() => import("./LeafletMap"), {
   ssr: false,
-  loading: () => <div className="h-full w-full animate-pulse bg-cream-200" />,
+  loading: () => <div className="h-full w-full animate-pulse bg-surface-muted" />,
 });
 
 export default function MapView(props: LeafletMapProps) {

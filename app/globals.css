@@ -1,38 +1,85 @@
 @import "tailwindcss";
 
+/*
+ * Design tokens — the single source of truth for the site's look.
+ * Change a value here and every page (public site + admin) follows.
+ * Components use the Tailwind names exposed in @theme below
+ * (bg-primary, text-muted, border-border, shadow-card, rounded-card …).
+ */
 :root {
-  --pi-teal-900: #0b3b36;
-  --pi-teal-700: #0f4f47;
-  --pi-teal-600: #146b5f;
-  --pi-teal-100: #dfeae7;
-  --pi-gold-600: #c9973e;
-  --pi-gold-100: #f5e8cd;
-  --pi-rust-600: #a85c3b;
-  --pi-cream: #f7f5f0;
-  --pi-cream-200: #efeae0;
-  --pi-ink-900: #1c2321;
-  --pi-slate-600: #5b6764;
-  --pi-slate-300: #a9b3af;
-  --pi-border: #dfdbd0;
+  /* Brand */
+  --pi-primary: #10845c;
+  --pi-primary-hover: #0b6b4a;
+  --pi-primary-soft: #e8f5ef;
+  --pi-on-primary: #ffffff;
 
-  --font-display: "Fraunces", Georgia, serif;
+  /* Secondary accents */
+  --pi-info: #2563eb;            /* locations, links, "Featured" tags */
+  --pi-info-soft: #eaf1ff;
+  --pi-highlight: #f5a524;       /* logo mark, stars, "New Launch" */
+  --pi-highlight-soft: #fff4de;
+  --pi-danger: #dc3b3b;
+  --pi-danger-soft: #fdecec;
+  --pi-whatsapp: #25d366;
+  --pi-whatsapp-hover: #1fb959;
+
+  /* Surfaces */
+  --pi-canvas: #f6f8fa;          /* page background */
+  --pi-surface: #ffffff;         /* cards, header, footer */
+  --pi-surface-muted: #f1f4f6;   /* subtle fills, hover rows */
+
+  /* Text */
+  --pi-ink: #111827;             /* headings, body */
+  --pi-muted: #6b7280;           /* secondary text */
+  --pi-subtle: #9ca3af;          /* placeholders, meta */
+
+  /* Lines */
+  --pi-border: #e5e7eb;
+  --pi-border-strong: #d1d5db;
+
+  /* Shape & depth */
+  --pi-radius-card: 16px;
+  --pi-radius-control: 10px;
+  --pi-shadow-card: 0 1px 2px rgb(16 24 40 / 0.04), 0 1px 3px rgb(16 24 40 / 0.06);
+  --pi-shadow-card-hover: 0 12px 24px -6px rgb(16 24 40 / 0.12), 0 4px 8px -4px rgb(16 24 40 / 0.06);
+  --pi-shadow-pop: 0 20px 40px -12px rgb(16 24 40 / 0.18);
+
+  /* Type */
+  --font-display: "Inter", system-ui, sans-serif;
   --font-body: "Inter", system-ui, sans-serif;
 }
 
 @theme inline {
-  --color-teal-900: var(--pi-teal-900);
-  --color-teal-700: var(--pi-teal-700);
-  --color-teal-600: var(--pi-teal-600);
-  --color-teal-100: var(--pi-teal-100);
-  --color-gold-600: var(--pi-gold-600);
-  --color-gold-100: var(--pi-gold-100);
-  --color-rust-600: var(--pi-rust-600);
-  --color-cream: var(--pi-cream);
-  --color-cream-200: var(--pi-cream-200);
-  --color-ink-900: var(--pi-ink-900);
-  --color-slate-600: var(--pi-slate-600);
-  --color-slate-300: var(--pi-slate-300);
+  --color-primary: var(--pi-primary);
+  --color-primary-hover: var(--pi-primary-hover);
+  --color-primary-soft: var(--pi-primary-soft);
+  --color-on-primary: var(--pi-on-primary);
+
+  --color-info: var(--pi-info);
+  --color-info-soft: var(--pi-info-soft);
+  --color-highlight: var(--pi-highlight);
+  --color-highlight-soft: var(--pi-highlight-soft);
+  --color-danger: var(--pi-danger);
+  --color-danger-soft: var(--pi-danger-soft);
+  --color-whatsapp: var(--pi-whatsapp);
+  --color-whatsapp-hover: var(--pi-whatsapp-hover);
+
+  --color-canvas: var(--pi-canvas);
+  --color-surface: var(--pi-surface);
+  --color-surface-muted: var(--pi-surface-muted);
+
+  --color-ink: var(--pi-ink);
+  --color-muted: var(--pi-muted);
+  --color-subtle: var(--pi-subtle);
+
   --color-border: var(--pi-border);
+  --color-border-strong: var(--pi-border-strong);
+
+  --radius-card: var(--pi-radius-card);
+  --radius-control: var(--pi-radius-control);
+  --shadow-card: var(--pi-shadow-card);
+  --shadow-card-hover: var(--pi-shadow-card-hover);
+  --shadow-pop: var(--pi-shadow-pop);
 
   --font-display: var(--font-display);
   --font-body: var(--font-body);
@@ -43,13 +90,14 @@ html {
 }
 
 body {
-  background: var(--pi-cream);
-  color: var(--pi-ink-900);
+  background: var(--pi-canvas);
+  color: var(--pi-ink);
   font-family: var(--font-body), system-ui, sans-serif;
 }
 
 h1, h2, h3, h4, .font-display {
-  font-family: var(--font-display), Georgia, serif;
+  font-family: var(--font-display), system-ui, sans-serif;
+  letter-spacing: -0.015em;
 }
 
 .tabular-nums {
@@ -62,9 +110,9 @@ button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid var(--pi-gold-600);
+  outline: 2px solid var(--pi-primary);
   outline-offset: 2px;
-  border-radius: 2px;
+  border-radius: 4px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -76,6 +124,14 @@ textarea:focus-visible {
   }
 }
 
+/* Hide scrollbars on horizontal thumbnail strips */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* RERA verification stamp - signature element */
 .rera-stamp {
   --stamp-size: 46px;
@@ -85,9 +141,9 @@ textarea:focus-visible {
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: var(--pi-teal-900);
-  color: var(--pi-cream);
-  box-shadow: 0 0 0 2px var(--pi-cream), 0 0 0 3px var(--pi-teal-900);
+  background: var(--pi-primary);
+  color: var(--pi-on-primary);
+  box-shadow: 0 0 0 2px var(--pi-surface), 0 0 0 3px var(--pi-primary);
 }
 
 .rera-stamp::before {
@@ -96,7 +152,7 @@ textarea:focus-visible {
   inset: -5px;
   border-radius: 50%;
   background: repeating-conic-gradient(
-    var(--pi-teal-900) 0deg 9deg,
+    var(--pi-primary) 0deg 9deg,
     transparent 9deg 18deg
   );
   z-index: -1;
@@ -107,6 +163,12 @@ textarea:focus-visible {
   background: transparent;
   border: 0;
   filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.35));
+}
+.pi-map-pin .pin-body {
+  fill: var(--pi-primary);
+}
+.pi-map-pin .pin-dot {
+  fill: var(--pi-surface);
 }
 
 /* Keep Leaflet's panes below the sticky header */

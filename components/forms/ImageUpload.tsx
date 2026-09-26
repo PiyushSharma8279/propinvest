@@ -103,15 +103,15 @@ export default function ImageUpload({
         {value.map((url, index) => (
           <div
             key={url}
-            className="relative aspect-[4/3] overflow-hidden rounded-md border border-border bg-cream-200"
+            className="relative aspect-[4/3] overflow-hidden rounded-md border border-border bg-surface-muted"
           >
             <Image src={url} alt={`Image ${index + 1}`} fill sizes="240px" className="object-cover" />
             {showCover && index === 0 && (
-              <span className="absolute left-2 top-2 rounded bg-gold-600 px-1.5 py-0.5 text-[11px] font-semibold uppercase text-ink-900">
+              <span className="absolute left-2 top-2 rounded bg-highlight px-1.5 py-0.5 text-[11px] font-semibold uppercase text-ink">
                 Cover
               </span>
             )}
-            <div className="absolute inset-x-0 bottom-0 flex justify-between bg-ink-900/60 p-1">
+            <div className="absolute inset-x-0 bottom-0 flex justify-between bg-ink/60 p-1">
               {multiple ? (
                 <div className="flex gap-1">
                   <IconButton label="Move left" onClick={() => move(index, -1)} disabled={index === 0}>
@@ -138,9 +138,9 @@ export default function ImageUpload({
         {Array.from({ length: pending }).map((_, i) => (
           <div
             key={`pending-${i}`}
-            className="grid aspect-[4/3] place-items-center rounded-md border border-border bg-cream-200"
+            className="grid aspect-[4/3] place-items-center rounded-md border border-border bg-surface-muted"
           >
-            <Loader2 className="h-5 w-5 animate-spin text-slate-600" aria-label="Uploading" />
+            <Loader2 className="h-5 w-5 animate-spin text-muted" aria-label="Uploading" />
           </div>
         ))}
 
@@ -148,7 +148,7 @@ export default function ImageUpload({
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            className="flex aspect-[4/3] flex-col items-center justify-center gap-1 rounded-md border-2 border-dashed border-border bg-white text-sm text-slate-600 transition hover:border-teal-600 hover:text-teal-900"
+            className="flex aspect-[4/3] flex-col items-center justify-center gap-1 rounded-md border-2 border-dashed border-border bg-surface text-sm text-muted transition hover:border-primary hover:text-primary"
           >
             <ImagePlus className="h-6 w-6" aria-hidden="true" />
             {multiple ? "Add images" : "Upload image"}
@@ -164,11 +164,11 @@ export default function ImageUpload({
         className="hidden"
         onChange={(e) => handleFiles(e.target.files)}
       />
-      <p className="mt-2 text-xs text-slate-600">
+      <p className="mt-2 text-xs text-muted">
         JPG, PNG or WebP, up to {MAX_UPLOAD_MB} MB each.
         {showCover && " The first image is the cover photo."}
       </p>
-      {message && <p className="mt-1 text-sm text-rust-600">{message}</p>}
+      {message && <p className="mt-1 text-sm text-danger">{message}</p>}
     </div>
   );
 }
@@ -184,8 +184,8 @@ function IconButton({
       aria-label={label}
       title={label}
       className={cn(
-        "grid h-7 w-7 place-items-center rounded text-cream disabled:opacity-30",
-        danger ? "hover:bg-rust-600" : "hover:bg-cream/20"
+        "grid h-7 w-7 place-items-center rounded text-on-primary disabled:opacity-30",
+        danger ? "hover:bg-danger" : "hover:bg-white/20"
       )}
       {...props}
     />

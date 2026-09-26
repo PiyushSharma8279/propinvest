@@ -53,8 +53,8 @@ export default function QuickFilterChips({
           className={cn(
             "rounded-full border px-3 py-1.5 text-sm font-medium transition",
             chip.active
-              ? "border-teal-900 bg-teal-900 text-cream"
-              : "border-border bg-white text-ink-900 hover:border-teal-900"
+              ? "border-primary bg-primary text-on-primary"
+              : "border-border bg-surface text-muted hover:border-primary hover:text-primary"
           )}
         >
           {chip.label}

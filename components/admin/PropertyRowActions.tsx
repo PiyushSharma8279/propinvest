@@ -1,15 +1,42 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, RotateCcw, Star, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { ExternalLink, Eye, EyeOff, Loader2, Pencil, RotateCcw, Star, Trash2 } from "lucide-react";
 import { api, ApiError } from "@/lib/api-client";
 import type { Property } from "@/lib/types";
+import { cn } from "@/lib/utils/cn";
 
 type Action = "active" | "featured" | "delete" | "restore";
 
-/** Toggle active / featured, soft delete and restore — all via the properties API. */
+const actionClass =
+  "inline-flex items-center gap-1 whitespace-nowrap rounded-control px-2 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50";
+
+function ActionButton({
+  label,
+  title,
+  icon,
+  onClick,
+  loading,
+  className,
+}: {
+  label: string;
+  title: string;
+  icon: React.ReactNode;
+  onClick: () => void;
+  loading?: boolean;
+  className?: string;
+}) {
+  return (
+    <button type="button" onClick={onClick} disabled={loading} title={title} className={cn(actionClass, className)}>
+      {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : icon}
+      {label}
+    </button>
+  );
+}
+
+/** View / edit links plus toggle active / featured, soft delete and restore — all via the properties API. */
 export default function PropertyRowActions({ property }: { property: Property }) {
   const router = useRouter();
   const [busy, setBusy] = useState<Action | null>(null);
@@ -43,38 +70,65 @@ export default function PropertyRowActions({ property }: { property: Property })
 
   if (property.isDeleted) {
     return (
-      <Button variant="outline" size="sm" loading={busy === "restore"} onClick={() => run("restore")}>
-        {busy !== "restore" && <RotateCcw className="h-4 w-4" />} Restore
-      </Button>
+      <div className="flex justify-end">
+        <ActionButton
+          label="Restore"
+          title="Restore this property"
+          icon={<RotateCcw className="h-3.5 w-3.5" />}
+          loading={busy === "restore"}
+          onClick={() => run("restore")}
+          className="border border-border bg-surface text-ink hover:border-primary hover:text-primary"
+        />
+      </div>
     );
   }
 
   return (
-    <>
-      <Button
-        variant="ghost"
-        size="sm"
+    <div className="flex items-center justify-end gap-0.5">
+      {property.isActive && (
+        <Link
+          href={`/projects/${property.slug}`}
+          target="_blank"
+          title="View on website"
+          className={cn(actionClass, "text-muted hover:bg-surface-muted hover:text-ink")}
+        >
+          <ExternalLink className="h-3.5 w-3.5" /> View
+        </Link>
+      )}
+      <Link
+        href={`/admin/properties/${property.id}/edit`}
+        title="Edit property"
+        className={cn(actionClass, "text-primary hover:bg-primary-soft")}
+      >
+        <Pencil className="h-3.5 w-3.5" /> Edit
+      </Link>
+      <ActionButton
+        label={property.isActive ? "Deactivate" : "Activate"}
+        title={property.isActive ? "Hide from website" : "Show on website"}
+        icon={property.isActive ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
         loading={busy === "active"}
         onClick={() => run("active")}
-        title={property.isActive ? "Hide from website" : "Show on website"}
-      >
-        {busy !== "active" && (property.isActive ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />)}
-        {property.isActive ? "Deactivate" : "Activate"}
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
+        className="text-muted hover:bg-surface-muted hover:text-ink"
+      />
+      <ActionButton
+        label={property.isFeatured ? "Unfeature" : "Feature"}
+        title={property.isFeatured ? "Remove from homepage" : "Feature on homepage"}
+        icon={<Star className="h-3.5 w-3.5" fill={property.isFeatured ? "currentColor" : "none"} />}
         loading={busy === "featured"}
         onClick={() => run("featured")}
-        className={property.isFeatured ? "text-gold-600" : undefined}
-        title={property.isFeatured ? "Remove from homepage" : "Feature on homepage"}
-      >
-        {busy !== "featured" && <Star className="h-4 w-4" fill={property.isFeatured ? "currentColor" : "none"} />}
-        {property.isFeatured ? "Unfeature" : "Feature"}
-      </Button>
-      <Button variant="danger" size="sm" loading={busy === "delete"} onClick={() => run("delete")}>
-        {busy !== "delete" && <Trash2 className="h-4 w-4" />} Delete
-      </Button>
-    </>
+        className={cn(
+          "hover:bg-highlight-soft",
+          property.isFeatured ? "text-highlight" : "text-muted hover:text-ink"
+        )}
+      />
+      <ActionButton
+        label="Delete"
+        title="Delete (can be restored later)"
+        icon={<Trash2 className="h-3.5 w-3.5" />}
+        loading={busy === "delete"}
+        onClick={() => run("delete")}
+        className="text-danger hover:bg-danger-soft"
+      />
+    </div>
   );
 }

@@ -19,15 +19,15 @@ export default function Breadcrumbs({ items }: { items: Crumb[] }) {
   };
 
   return (
-    <nav aria-label="Breadcrumb" className="text-sm text-slate-600">
+    <nav aria-label="Breadcrumb" className="text-sm text-muted">
       <ol className="flex flex-wrap items-center gap-1">
         {items.map((item, index) => (
           <li key={item.href} className="flex items-center gap-1">
             {index > 0 && <span aria-hidden="true">›</span>}
             {index === items.length - 1 ? (
-              <span className="font-medium text-ink-900">{item.label}</span>
+              <span className="font-medium text-ink">{item.label}</span>
             ) : (
-              <Link href={item.href} className="hover:text-teal-900 hover:underline">
+              <Link href={item.href} className="hover:text-primary hover:underline">
                 {item.label}
               </Link>
             )}

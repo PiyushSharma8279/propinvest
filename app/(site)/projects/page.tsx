@@ -55,7 +55,7 @@ export default async function ProjectsPage({ searchParams }: Props) {
   };
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       <JsonLd data={itemListJsonLd} />
       <Breadcrumbs
         items={[
@@ -65,9 +65,9 @@ export default async function ProjectsPage({ searchParams }: Props) {
       />
 
       <div className="mt-3 flex flex-wrap items-baseline justify-between gap-3">
-        <h1 className="font-display text-2xl font-semibold text-ink-900 sm:text-3xl">
+        <h1 className="text-2xl font-bold text-ink sm:text-3xl">
           {result.total} {result.total === 1 ? "Property" : "Properties"}{" "}
-          <span className="text-slate-600">
+          <span className="font-medium text-muted">
             | {heading} in {place}
           </span>
         </h1>
@@ -78,29 +78,29 @@ export default async function ProjectsPage({ searchParams }: Props) {
         <QuickFilterChips current={filters} base={base} />
       </div>
 
-      <div className="mt-6 flex flex-col gap-6 sm:flex-row">
+      <div className="mt-6 flex flex-col gap-6 md:flex-row">
         <FilterSidebar current={filters} locations={locations} />
 
-        <div className="flex-1">
+        <div className="min-w-0 flex-1">
           {result.items.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-border bg-white p-10 text-center">
-              <p className="font-display text-lg font-semibold text-ink-900">
+            <div className="rounded-card border border-dashed border-border-strong bg-surface p-10 text-center">
+              <p className="text-lg font-semibold text-ink">
                 No properties match these filters
               </p>
-              <p className="mt-1 text-sm text-slate-600">
+              <p className="mt-1 text-sm text-muted">
                 Location search matches the exact phrase you type. Try a shorter phrase (for
                 example just the city), widen your budget, or clear a filter.
               </p>
               <Link
                 href="/projects"
-                className="mt-4 inline-block rounded-md bg-teal-900 px-4 py-2 text-sm font-semibold text-cream"
+                className="mt-4 inline-block rounded-control bg-primary px-4 py-2 text-sm font-semibold text-on-primary hover:bg-primary-hover"
               >
                 Clear all filters
               </Link>
             </div>
           ) : (
             <>
-              <div className="flex flex-col gap-5">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
                 {result.items.map((property) => (
                   <PropertyCard key={property.id} property={property} />
                 ))}

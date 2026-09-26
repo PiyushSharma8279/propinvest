@@ -11,12 +11,12 @@ import {
 import type { LocationOptions, PropertyFilters } from "@/lib/types";
 import { rupeesToLakh } from "@/lib/utils/format";
 
-const controlClass = "mt-2 w-full rounded-md border border-border bg-white px-2 py-2 text-sm";
+const controlClass = "mt-2 w-full rounded-control border border-border bg-surface px-3 py-2 text-sm text-ink focus:border-primary focus:outline-none";
 
 function Group({ legend, children }: { legend: string; children: React.ReactNode }) {
   return (
     <fieldset className="mt-5 border-t border-border pt-4">
-      <legend className="text-sm font-semibold text-ink-900">{legend}</legend>
+      <legend className="text-sm font-semibold text-ink">{legend}</legend>
       {children}
     </fieldset>
   );
@@ -62,13 +62,13 @@ export default function FilterSidebar({
     <form
       action="/projects"
       method="GET"
-      className="w-full shrink-0 self-start rounded-lg border border-border bg-white p-4 sm:w-64"
+      className="w-full shrink-0 self-start rounded-card border border-border bg-surface p-5 shadow-card md:sticky md:top-32 md:w-64"
     >
-      <h2 className="font-display text-lg font-semibold text-ink-900">Filters</h2>
+      <h2 className="text-lg font-semibold text-ink">Filters</h2>
       {current.sort && <input type="hidden" name="sort" value={current.sort} />}
 
       <label className="mt-4 block">
-        <span className="text-sm font-semibold text-ink-900">Location</span>
+        <span className="text-sm font-semibold text-ink">Location</span>
         <input
           type="search"
           name="q"
@@ -122,7 +122,7 @@ export default function FilterSidebar({
             defaultValue={current.minBudget ? rupeesToLakh(current.minBudget) : ""}
             className={controlClass}
           />
-          <span className="mt-2 text-slate-600">—</span>
+          <span className="mt-2 text-muted">—</span>
           <input
             type="number"
             name="maxBudget"
@@ -144,7 +144,7 @@ export default function FilterSidebar({
             defaultValue={current.minArea ?? ""}
             className={controlClass}
           />
-          <span className="mt-2 text-slate-600">—</span>
+          <span className="mt-2 text-muted">—</span>
           <input
             type="number"
             name="maxArea"
@@ -154,12 +154,12 @@ export default function FilterSidebar({
             className={controlClass}
           />
         </div>
-        <p className="mt-1 text-xs text-slate-600">In the unit shown on each listing.</p>
+        <p className="mt-1 text-xs text-muted">In the unit shown on each listing.</p>
       </Group>
 
       {showBedrooms && (
         <Group legend="Bedrooms">
-          <div className="mt-2 grid grid-cols-2 gap-2 text-sm text-ink-900">
+          <div className="mt-2 grid grid-cols-2 gap-2 text-sm text-ink">
             {bedroomOptions.map((bhk) => (
               <label key={bhk} className="flex items-center gap-2">
                 <input
@@ -167,7 +167,7 @@ export default function FilterSidebar({
                   name="bhk"
                   value={bhk}
                   defaultChecked={current.bhk?.includes(bhk)}
-                  className="h-4 w-4 accent-teal-900"
+                  className="h-4 w-4 accent-primary"
                 />
                 {bhk} BHK
               </label>
@@ -177,7 +177,7 @@ export default function FilterSidebar({
       )}
 
       <Group legend="Possession">
-        <div className="mt-2 flex flex-col gap-2 text-sm text-ink-900">
+        <div className="mt-2 flex flex-col gap-2 text-sm text-ink">
           {possessionStatuses.map((status) => (
             <label key={status} className="flex items-center gap-2">
               <input
@@ -185,7 +185,7 @@ export default function FilterSidebar({
                 name="possession"
                 value={status}
                 defaultChecked={current.possession?.includes(status)}
-                className="h-4 w-4 accent-teal-900"
+                className="h-4 w-4 accent-primary"
               />
               {status}
             </label>
@@ -203,13 +203,13 @@ export default function FilterSidebar({
           />
         )}
         <OptionSelect name="facing" value={current.facing} placeholder="Any facing" options={facingOptions} />
-        <label className="mt-3 flex items-center gap-2 text-sm text-ink-900">
+        <label className="mt-3 flex items-center gap-2 text-sm text-ink">
           <input
             type="checkbox"
             name="rera"
             value="true"
             defaultChecked={current.rera}
-            className="h-4 w-4 accent-teal-900"
+            className="h-4 w-4 accent-primary"
           />
           RERA registered only
         </label>
@@ -217,13 +217,13 @@ export default function FilterSidebar({
 
       <button
         type="submit"
-        className="mt-6 w-full rounded-md bg-teal-900 px-4 py-2.5 text-sm font-semibold text-cream transition hover:bg-teal-700"
+        className="mt-6 w-full rounded-control bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary transition hover:bg-primary-hover"
       >
         Apply Filters
       </button>
       <Link
         href="/projects"
-        className="mt-2 block w-full rounded-md border border-border px-4 py-2 text-center text-sm font-medium text-slate-600 transition hover:bg-cream-200"
+        className="mt-2 block w-full rounded-control border border-border px-4 py-2 text-center text-sm font-medium text-muted transition hover:bg-surface-muted"
       >
         Clear All
       </Link>

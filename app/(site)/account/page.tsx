@@ -21,13 +21,13 @@ export default async function AccountPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
-      <h1 className="font-display text-3xl font-semibold text-ink-900">My account</h1>
+      <h1 className="font-display text-3xl font-semibold text-ink">My account</h1>
       <Card className="mt-6 p-6">
         <dl className="grid gap-4 sm:grid-cols-2">
           {details.map((d) => (
             <div key={d.label}>
-              <dt className="text-xs uppercase tracking-wide text-slate-600">{d.label}</dt>
-              <dd className="mt-1 font-medium text-ink-900">{d.value}</dd>
+              <dt className="text-xs uppercase tracking-wide text-muted">{d.label}</dt>
+              <dd className="mt-1 font-medium text-ink">{d.value}</dd>
             </div>
           ))}
         </dl>

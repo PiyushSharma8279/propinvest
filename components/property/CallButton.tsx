@@ -35,7 +35,7 @@ export default function CallButton({
       <a
         href={`tel:${phone}`}
         onClick={() => trackLead("call_number_dialed", projectTitle)}
-        className={`inline-flex items-center justify-center gap-2 rounded-md bg-teal-900 px-4 py-2.5 text-sm font-semibold text-cream transition hover:bg-teal-700 ${
+        className={`inline-flex items-center justify-center gap-2 rounded-control bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary transition hover:bg-primary-hover ${
           fullWidth ? "w-full" : ""
         } ${className}`}
       >
@@ -52,7 +52,7 @@ export default function CallButton({
         setRevealed(true);
         trackLead("view_number_clicked", projectTitle);
       }}
-      className={`inline-flex items-center justify-center gap-2 rounded-md bg-teal-900 px-4 py-2.5 text-sm font-semibold text-cream transition hover:bg-teal-700 ${
+      className={`inline-flex items-center justify-center gap-2 rounded-control bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary transition hover:bg-primary-hover ${
         fullWidth ? "w-full" : ""
       } ${className}`}
     >
