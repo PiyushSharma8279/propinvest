@@ -74,6 +74,19 @@ export const properties = pgTable(
     areaMin: real("area_min").notNull().default(0),
     areaMax: real("area_max").notNull().default(0),
     areaUnit: text("area_unit").notNull().default("sq.ft."),
+    /** Legacy (replaced by prelaunchRate / launchRate); kept so existing values are not lost. */
+    priceTag: text("price_tag").notNull().default(""),
+    /** Optional offer rates in ₹ per areaUnit (plots & residential); 0 = not given. */
+    prelaunchRate: doublePrecision("prelaunch_rate").notNull().default(0),
+    launchRate: doublePrecision("launch_rate").notNull().default(0),
+    /** Optional payment plan, e.g. "20:80", "CLP", "20 into 5"; "" = not given. */
+    paymentPlan: text("payment_plan").notNull().default(""),
+    /** Residential: optional built-up and carpet area, in areaUnit; 0 = not given. */
+    builtUpArea: real("built_up_area").notNull().default(0),
+    carpetArea: real("carpet_area").notNull().default(0),
+    /** Residential: number of toilets / bathrooms and kitchens; 0 = not given. */
+    bathrooms: integer("bathrooms").notNull().default(0),
+    kitchens: integer("kitchens").notNull().default(0),
 
     status: possessionStatusEnum("status").notNull(),
     possessionDate: date("possession_date", { mode: "string" }),

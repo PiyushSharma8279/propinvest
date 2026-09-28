@@ -11,7 +11,7 @@ import TagField from "@/components/forms/TagField";
 import { Button, LinkButton } from "@/components/ui/Button";
 import { Section } from "@/components/ui/Card";
 import { Checkbox, Field, FormAlert } from "@/components/ui/Field";
-import { inputClass, labelClass } from "@/components/ui/styles";
+import { hintClass, inputClass, labelClass } from "@/components/ui/styles";
 import { api, ApiError } from "@/lib/api-client";
 import {
   amenitySuggestions,
@@ -27,6 +27,7 @@ import {
   monthNames,
   openSideOptions,
   OTHER_AUTHORITY,
+  paymentPlanPresets,
   ownershipOptions,
   possessionStatuses,
   propertyTypes,
@@ -46,6 +47,7 @@ import {
   rupeesToLakh,
 } from "@/lib/utils/format";
 import type { LatLng } from "@/lib/utils/maps";
+import { launchOffer } from "@/lib/utils/launch-offer";
 import { slugify } from "@/lib/utils/slug";
 
 const categoryIcons: Record<PropertyCategory, typeof Building> = {
@@ -82,6 +84,16 @@ interface FormState {
   areaMin: string;
   areaMax: string;
   areaUnit: string;
+  /** Optional offer rates, ₹ per areaUnit (plots & residential). */
+  prelaunchRate: string;
+  launchRate: string;
+  /** Optional, e.g. "20:80" or "20 into 5". */
+  paymentPlan: string;
+  /** Residential only, in areaUnit. */
+  builtUpArea: string;
+  carpetArea: string;
+  bathrooms: string;
+  kitchens: string;
   status: PossessionStatus;
   /** "01".."12" and "2031"; both empty = not announced. */
   possessionMonth: string;
@@ -117,7 +129,7 @@ const numberToField = (n: number | undefined) => (n ? String(n) : "");
 function initialState(property: Property | undefined, category: PropertyCategory): FormState {
   const cat = property?.category ?? category;
   return {
-    title: property?.title ?? "",
+    title: initialTitle(property),
     builder: property?.builder ?? "",
     description: plainToHtml(property?.description ?? ""),
     category: cat,
@@ -139,6 +151,13 @@ function initialState(property: Property | undefined, category: PropertyCategory
     areaMin: numberToField(property?.areaMin),
     areaMax: numberToField(property?.areaMax),
     areaUnit: property?.areaUnit ?? defaultAreaUnit[cat],
+    prelaunchRate: numberToField(property?.prelaunchRate),
+    launchRate: numberToField(property?.launchRate),
+    paymentPlan: property?.paymentPlan ?? "",
+    builtUpArea: numberToField(property?.builtUpArea),
+    carpetArea: numberToField(property?.carpetArea),
+    bathrooms: numberToField(property?.bathrooms),
+    kitchens: numberToField(property?.kitchens),
     status: property?.status ?? "New Launch",
     possessionMonth: property?.possessionDate?.slice(5, 7) ?? "",
     possessionYear: property?.possessionDate?.slice(0, 4) ?? "",
@@ -178,15 +197,16 @@ function toRequestBody(form: FormState) {
     usps,
     ...rest
   } = form;
-  const isPlot = form.category === "Plot";
+  // Plots and residential use one total area + one total price (rate is derived); commercial keeps a range.
+  const unitPriced = form.category !== "Commercial";
   return {
     ...rest,
     latitude: location?.lat ?? null,
     longitude: location?.lng ?? null,
-    priceMin: isPlot ? Math.round(Number(priceMinRupees) || 0) : lakhToRupees(Number(priceMinLakh) || 0),
-    priceMax: isPlot ? Math.round(Number(priceMinRupees) || 0) : lakhToRupees(Number(priceMaxLakh) || 0),
+    priceMin: unitPriced ? Math.round(Number(priceMinRupees) || 0) : lakhToRupees(Number(priceMinLakh) || 0),
+    priceMax: unitPriced ? Math.round(Number(priceMinRupees) || 0) : lakhToRupees(Number(priceMaxLakh) || 0),
     areaMin: Number(form.areaMin) || 0,
-    areaMax: isPlot ? Number(form.areaMin) || 0 : Number(form.areaMax) || 0,
+    areaMax: unitPriced ? Number(form.areaMin) || 0 : Number(form.areaMax) || 0,
     // Month + year only; the day is always the 1st.
     possessionDate: possessionYear && possessionMonth ? `${possessionYear}-${possessionMonth}` : "",
     approvalAuthority: authorityChoice === OTHER_AUTHORITY ? approvalAuthority : authorityChoice,
@@ -217,11 +237,14 @@ export default function PropertyForm({
   const [uploading, setUploading] = useState(false);
   // Plot rate per unit, kept as typed; the total price lives in form.priceMinRupees.
   const [rateInput, setRateInput] = useState(() =>
-    rateFrom(property?.priceMin ?? 0, property?.category === "Plot" ? property.areaMin : 0)
+    rateFrom(property?.priceMin ?? 0, property && property.category !== "Commercial" ? property.areaMin : 0)
   );
   const [lastPriceEdit, setLastPriceEdit] = useState<"rate" | "total">("total");
 
   const isPlot = form.category === "Plot";
+  const isResidential = form.category === "Residential";
+  // Plots and residential: one total area + total price, with the rate per unit derived.
+  const unitPriced = isPlot || isResidential;
   const configField = configurationField[form.category];
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
@@ -370,8 +393,8 @@ export default function PropertyForm({
   }
 
   // Plots have a single area and a single total price.
-  const priceMin = isPlot ? Number(form.priceMinRupees) || 0 : lakhToRupees(Number(form.priceMinLakh) || 0);
-  const priceMax = isPlot ? priceMin : lakhToRupees(Number(form.priceMaxLakh || form.priceMinLakh) || 0);
+  const priceMin = unitPriced ? Number(form.priceMinRupees) || 0 : lakhToRupees(Number(form.priceMinLakh) || 0);
+  const priceMax = unitPriced ? priceMin : lakhToRupees(Number(form.priceMaxLakh || form.priceMinLakh) || 0);
   const pricePreview = formatPriceRange(priceMin, priceMax);
 
   // Plot rate: total price ÷ plot area, in the unit the admin selected.
@@ -505,10 +528,12 @@ export default function PropertyForm({
       <Section title="Basic details">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field
-            label={isPlot ? "Project / colony name" : "Project name"}
+            label={isPlot ? "Project / colony name" : isResidential ? "Project name (optional)" : "Project name"}
             error={errors.title}
             hint={
-              slugPreview ? (
+              isResidential && !form.title.trim() ? (
+                "Leave empty to use the builder name as the listing name."
+              ) : slugPreview ? (
                 <>
                   Web address: <span className="font-medium text-ink">/projects/{slugPreview}</span>
                   {!property && " (a number is added if it's taken)"}
@@ -520,7 +545,16 @@ export default function PropertyForm({
           >
             <input {...bind("title")} placeholder={isPlot ? "e.g. Green Valley Enclave" : "e.g. Skyline Arte"} />
           </Field>
-          <Field label="Builder / developer" hint="Optional">
+          <Field
+            label="Builder / developer"
+            hint={
+              isResidential && !form.title.trim()
+                ? form.builder.trim()
+                  ? `Listing will be named "${form.builder.trim()}"`
+                  : "Required if there is no project name"
+                : "Optional"
+            }
+          >
             <input {...bind("builder")} placeholder="e.g. Skyline Group" />
           </Field>
         </div>
@@ -570,13 +604,13 @@ export default function PropertyForm({
         />
       </Section>
 
-      {isPlot ? (
+      {unitPriced ? (
         <Section
-          title="Plot size & price"
-          description="Enter the plot area, then the rate or the total price — the other is calculated for you."
+          title={isPlot ? "Plot size & price" : "Size & price"}
+          description={`Enter the ${isPlot ? "plot" : "total"} area, then the rate or the total price — the other is calculated for you.`}
         >
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Plot area" error={errors.areaMin}>
+            <Field label={isPlot ? "Plot area" : "Total area"} error={errors.areaMin}>
               <input
                 {...bind("areaMin")}
                 onChange={(e) => changePlotArea(e.target.value)}
@@ -630,6 +664,15 @@ export default function PropertyForm({
             </Field>
           </div>
 
+          <LaunchOfferFields
+            prelaunchRate={form.prelaunchRate}
+            launchRate={form.launchRate}
+            area={Number(form.areaMin) || 0}
+            unitLabel={unitLabel}
+            onChange={(key, value) => set(key, value)}
+          />
+          <PaymentPlanField value={form.paymentPlan} onChange={(v) => set("paymentPlan", v)} />
+
           <p className="-mt-1 rounded-control bg-primary-soft/60 px-3 py-2 text-sm text-muted">
             {plotRate ? (
               <>
@@ -640,9 +683,52 @@ export default function PropertyForm({
                 <span className="tabular-nums font-semibold text-primary">{pricePreview}</span>
               </>
             ) : (
-              "Enter the plot area, then either the rate or the total price. The other one is calculated."
+              `Enter the ${isPlot ? "plot" : "total"} area, then either the rate or the total price. The other one is calculated.`
             )}
           </p>
+
+          {isResidential && (
+            <>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label={`Built-up area (${unitLabel})`} hint="Optional">
+                  <input {...bind("builtUpArea")} type="number" min="0" step="any" inputMode="decimal" />
+                </Field>
+                <Field label={`Carpet area (${unitLabel})`} hint="Optional">
+                  <input {...bind("carpetArea")} type="number" min="0" step="any" inputMode="decimal" />
+                </Field>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <span className={labelClass}>{configField.label}</span>
+                <TagField
+                  name="configurations"
+                  values={form.configurations}
+                  onChange={(values) => set("configurations", values)}
+                  presets={configField.presets}
+                  placeholder={configField.hint}
+                />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <ChoiceField label="Toilets / bathrooms">
+                  <ChoiceGroup
+                    name="Toilets"
+                    value={form.bathrooms}
+                    onChange={(v) => set("bathrooms", v)}
+                    options={roomCountOptions(5)}
+                  />
+                </ChoiceField>
+                <ChoiceField label="Kitchens">
+                  <ChoiceGroup
+                    name="Kitchens"
+                    value={form.kitchens}
+                    onChange={(v) => set("kitchens", v)}
+                    options={roomCountOptions(3)}
+                  />
+                </ChoiceField>
+              </div>
+            </>
+          )}
         </Section>
       ) : (
       <Section title="Price & size">
@@ -654,6 +740,7 @@ export default function PropertyForm({
             <input {...bind("priceMaxLakh")} type="number" min="0" step="0.01" inputMode="decimal" placeholder="e.g. 250" />
           </Field>
         </div>
+        <PaymentPlanField value={form.paymentPlan} onChange={(v) => set("paymentPlan", v)} />
         <p className="-mt-1 text-sm text-muted">
           Shows on the website as{" "}
           <span className="tabular-nums font-semibold text-primary">{pricePreview}</span>
@@ -703,14 +790,16 @@ export default function PropertyForm({
               ))}
             </select>
           </Field>
-          <Field label="Facing">
-            <select {...bind("facing")}>
-              <option value="">—</option>
-              {facingOptions.map((o) => (
-                <option key={o}>{o}</option>
-              ))}
-            </select>
-          </Field>
+          {!isResidential && (
+            <Field label="Facing">
+              <select {...bind("facing")}>
+                <option value="">—</option>
+                {facingOptions.map((o) => (
+                  <option key={o}>{o}</option>
+                ))}
+              </select>
+            </Field>
+          )}
           {isPlot ? (
             <Field label="Approved by">
               <select
@@ -976,4 +1065,193 @@ function plainToHtml(value: string): string {
     .split(/\n{2,}/)
     .map((block) => `<p>${escape(block.trim()).replace(/\n/g, "<br>")}</p>`)
     .join("");
+}
+
+/**
+ * Residential listings may be saved without a project name (the builder's name is used), and a
+ * draft without any name is stored as "Untitled draft". Show an empty field in both cases.
+ */
+function initialTitle(property: Property | undefined): string {
+  if (!property) return "";
+  if (property.isDraft && property.title === "Untitled draft") return "";
+  if (property.category === "Residential" && property.builder && property.title === property.builder) return "";
+  return property.title;
+}
+
+/** 1…max, with the last option meaning "max or more" (e.g. "5+"). */
+function roomCountOptions(max: number) {
+  return Array.from({ length: max }, (_, i) => ({ value: String(i + 1), label: i + 1 === max ? `${max}+` : String(i + 1) }));
+}
+
+/* ---------- Pre-launch / launch offer ---------- */
+
+/**
+ * Two optional rate ⇄ total rows (same area and unit as the main price) plus the buyer's saving.
+ * Only the rates are stored; totals are rate × area.
+ */
+function LaunchOfferFields({
+  prelaunchRate,
+  launchRate,
+  area,
+  unitLabel,
+  onChange,
+}: {
+  prelaunchRate: string;
+  launchRate: string;
+  area: number;
+  unitLabel: string;
+  onChange: (key: "prelaunchRate" | "launchRate", value: string) => void;
+}) {
+  const offer = launchOffer({
+    prelaunchRate: Number(prelaunchRate) || 0,
+    launchRate: Number(launchRate) || 0,
+    areaMin: area,
+  });
+
+  return (
+    <div className="flex flex-col gap-4 rounded-xl border border-dashed border-border-strong p-4">
+      <div>
+        <p className="text-sm font-semibold text-ink">Pre-launch &amp; launch offer (optional)</p>
+        <p className={hintClass}>
+          Fill either or both. With both, the website shows how much a buyer saves by booking at pre-launch.
+        </p>
+      </div>
+      <OfferRow
+        label="Pre-launch"
+        rate={prelaunchRate}
+        area={area}
+        unitLabel={unitLabel}
+        onRateChange={(v) => onChange("prelaunchRate", v)}
+      />
+      <OfferRow
+        label="Launch"
+        rate={launchRate}
+        area={area}
+        unitLabel={unitLabel}
+        onRateChange={(v) => onChange("launchRate", v)}
+      />
+      {offer?.saving ? (
+        <p className="rounded-control bg-primary-soft px-3 py-2 text-sm text-ink">
+          Buyer saves{" "}
+          <span className="font-semibold tabular-nums text-primary">
+            ₹{formatRupees(offer.saving.perUnit)} per {unitLabel}
+          </span>
+          {offer.saving.total > 0 && (
+            <>
+              {" "}· <span className="font-semibold tabular-nums text-primary">₹{formatRupees(offer.saving.total)}</span>{" "}
+              ({formatAmountInWords(offer.saving.total)}) in total
+            </>
+          )}{" "}
+          · <span className="font-semibold">{offer.saving.percent}% off</span> the launch rate
+        </p>
+      ) : offer?.prelaunch && offer.launch ? (
+        <p className="text-xs text-danger">The pre-launch rate is not lower than the launch rate, so no saving is shown.</p>
+      ) : null}
+    </div>
+  );
+}
+
+function OfferRow({
+  label,
+  rate,
+  area,
+  unitLabel,
+  onRateChange,
+}: {
+  label: string;
+  rate: string;
+  area: number;
+  unitLabel: string;
+  onRateChange: (value: string) => void;
+}) {
+  // While the total is being typed, show exactly what was typed (the rate is derived from it).
+  const [totalDraft, setTotalDraft] = useState<string | null>(null);
+  const rateNum = Number(rate) || 0;
+  const total = rateNum && area ? Math.round(rateNum * area) : 0;
+  const totalValue = totalDraft ?? (total ? String(total) : "");
+
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <Field
+        label={`${label} rate per ${unitLabel} (₹)`}
+        hint={<AmountHint rupees={rateNum} suffix={` per ${unitLabel}`} fallback="Optional" />}
+      >
+        <input
+          value={rate}
+          onChange={(e) => onRateChange(e.target.value)}
+          className={inputClass}
+          type="number"
+          min="0"
+          step="any"
+          inputMode="decimal"
+        />
+      </Field>
+      <Field
+        label={`${label} total price (₹)`}
+        hint={
+          area ? (
+            <AmountHint rupees={Number(totalValue) || 0} fallback="Optional" />
+          ) : (
+            "Enter the area above to use totals"
+          )
+        }
+      >
+        <input
+          value={totalValue}
+          disabled={!area}
+          onChange={(e) => {
+            setTotalDraft(e.target.value);
+            const typed = Number(e.target.value) || 0;
+            onRateChange(typed && area ? String(Number((typed / area).toFixed(4))) : "");
+          }}
+          onBlur={() => setTotalDraft(null)}
+          className={inputClass}
+          type="number"
+          min="0"
+          step="1"
+          inputMode="numeric"
+        />
+      </Field>
+    </div>
+  );
+}
+
+/** Optional payment plan: pick a common plan or type your own (e.g. "20 into 5"). */
+function PaymentPlanField({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="flex flex-col gap-1">
+        <span className={labelClass}>Payment plan (optional)</span>
+        <input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          maxLength={100}
+          placeholder='e.g. 20:80, CLP or "20 into 5"'
+          className={inputClass}
+        />
+      </label>
+      <div className="flex flex-wrap gap-1.5">
+        {paymentPlanPresets.map((plan) => {
+          const active = value.trim().toLowerCase() === plan.toLowerCase();
+          return (
+            <button
+              key={plan}
+              type="button"
+              onClick={() => onChange(active ? "" : plan)}
+              aria-pressed={active}
+              className={cn(
+                "rounded-full border px-2.5 py-1 text-xs font-medium transition",
+                active
+                  ? "border-primary bg-primary text-on-primary"
+                  : "border-dashed border-border-strong text-muted hover:border-primary hover:text-primary"
+              )}
+            >
+              {plan}
+            </button>
+          );
+        })}
+      </div>
+      <span className={hintClass}>Shown on the property page and as a tag on the listing card.</span>
+    </div>
+  );
 }

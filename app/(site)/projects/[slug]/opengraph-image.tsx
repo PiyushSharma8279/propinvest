@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
 import { asJpeg } from "@/lib/og-jpeg";
+import { offerSummary } from "@/components/property/LaunchOffer";
 import { siteConfig } from "@/lib/site-config";
 import { formatAreaRange, formatPriceRange, joinAddress } from "@/lib/utils/format";
 import { shareImageUrl } from "@/lib/utils/share-image";
@@ -105,7 +106,14 @@ export default async function PropertyOpengraphImage({ params }: { params: Promi
             {area && <span style={{ fontSize: 24, color: "#6b7280", marginTop: 8 }}>{area}</span>}
           </div>
 
-          {price && <span style={{ fontSize: 46, fontWeight: 700, color: "#10845c" }}>{price}</span>}
+          {price && (
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              {property && offerSummary(property) && (
+                <span style={{ fontSize: 22, fontWeight: 700, color: "#b45309" }}>{offerSummary(property)}</span>
+              )}
+              <span style={{ fontSize: 46, fontWeight: 700, color: "#10845c" }}>{price}</span>
+            </div>
+          )}
         </div>
       </div>
     ),

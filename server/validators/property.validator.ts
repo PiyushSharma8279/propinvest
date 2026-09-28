@@ -46,8 +46,15 @@ export function validatePropertyInput(
   const propertyType = str(body, "propertyType", 100);
   if (!propertyType) v.add("propertyType", "Choose a property type.");
 
-  const title = str(body, "title", 200);
-  if (!title) v.add("title", "Enter the project / property name.");
+  // Residential listings may skip the project name; the builder's name is used instead.
+  const builder = str(body, "builder", 200);
+  const title = str(body, "title", 200) || (category === "Residential" ? builder : "");
+  if (!title) {
+    v.add(
+      "title",
+      category === "Residential" ? "Enter the project name or the builder name." : "Enter the project / property name."
+    );
+  }
 
   const description = sanitizeRichText(str(body, "description", 50000));
   if (!richTextToPlain(description)) v.add("description", "Add a short description.");
@@ -114,9 +121,11 @@ export function validatePropertyInput(
 
   const resolvedCategory = category ?? "Residential";
   const isPlot = resolvedCategory === "Plot";
+  const isResidential = resolvedCategory === "Residential";
+  const count = (key: string) => Math.min(20, Math.round(num(body, key)));
   return {
     title: title || "Untitled draft",
-    builder: str(body, "builder", 200),
+    builder,
     description,
     category: resolvedCategory,
     propertyType: propertyType || propertyTypes[resolvedCategory][0],
@@ -135,6 +144,14 @@ export function validatePropertyInput(
     areaMin,
     areaMax,
     areaUnit: areaUnit ?? defaultAreaUnit[resolvedCategory],
+    // Optional pre-launch / launch offer, ₹ per areaUnit (plots and residential only).
+    prelaunchRate: isPlot || isResidential ? num(body, "prelaunchRate") : 0,
+    launchRate: isPlot || isResidential ? num(body, "launchRate") : 0,
+    paymentPlan: str(body, "paymentPlan", 100),
+    builtUpArea: isResidential ? num(body, "builtUpArea") : 0,
+    carpetArea: isResidential ? num(body, "carpetArea") : 0,
+    bathrooms: isResidential ? count("bathrooms") : 0,
+    kitchens: isResidential ? count("kitchens") : 0,
     status: status ?? "New Launch",
     possessionDate: possessionDate ?? null,
     reraRegistered,
@@ -145,7 +162,8 @@ export function validatePropertyInput(
     phone: contact?.phone ?? "",
     whatsapp: whatsapp?.whatsapp ?? "",
     ownership: str(body, "ownership", 100),
-    facing: str(body, "facing", 50),
+    // Residential listings no longer ask for facing.
+    facing: isResidential ? "" : str(body, "facing", 50),
     furnishing: isPlot ? "" : str(body, "furnishing", 50),
     approvalAuthority: isPlot ? str(body, "approvalAuthority", 100) : "",
     cornerPlot: isPlot && bool(body, "cornerPlot"),

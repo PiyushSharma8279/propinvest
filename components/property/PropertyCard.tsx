@@ -4,6 +4,7 @@ import { ArrowUpRight, BedDouble, CalendarClock, CheckCircle2, Images, MapPin, R
 import type { Property } from "@/lib/types";
 import { cn } from "@/lib/utils/cn";
 import { formatAreaRange, formatPossession, formatPriceRange, joinAddress } from "@/lib/utils/format";
+import { OfferBadge } from "./LaunchOffer";
 import WhatsAppButton from "./WhatsAppButton";
 
 export const statusStyles: Record<Property["status"], { dot: string; text: string }> = {
@@ -89,9 +90,20 @@ export default function PropertyCard({ property }: { property: Property }) {
         </ul>
 
         <div className="mt-auto flex items-center justify-between gap-2 border-t border-border pt-3">
-          <p className="tabular-nums text-[15px] font-bold text-ink">
-            {formatPriceRange(property.priceMin, property.priceMax)}
-          </p>
+          <div className="min-w-0">
+            <div className="mb-1 flex flex-wrap gap-1 empty:hidden">
+              <OfferBadge property={property} />
+              {property.paymentPlan && (
+                <span className="inline-flex max-w-full items-center gap-1 truncate rounded-full bg-info-soft px-2 py-0.5 text-[11px] font-semibold text-info">
+                  <CalendarClock className="h-3 w-3 shrink-0" aria-hidden="true" />
+                  <span className="truncate">{property.paymentPlan}</span>
+                </span>
+              )}
+            </div>
+            <p className="tabular-nums text-[15px] font-bold text-ink">
+              {formatPriceRange(property.priceMin, property.priceMax)}
+            </p>
+          </div>
           <div className="flex shrink-0 items-center gap-1.5">
             <WhatsAppButton
               whatsapp={property.whatsapp}

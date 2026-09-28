@@ -167,3 +167,7 @@ export const monthNames = [
   "November",
   "December",
 ] as const;
+
+
+/** Quick picks for the optional payment plan field; admins can also type their own (e.g. "20 into 5"). */
+export const paymentPlanPresets = ["20:80", "25:75", "10:90", "30:70", "40:60", "Construction Linked (CLP)", "Down Payment", "Possession Linked"];

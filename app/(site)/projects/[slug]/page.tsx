@@ -14,18 +14,22 @@ import {
   LandPlot,
   Maximize2,
   Hammer,
+  Bath,
   Calculator,
+  CookingPot,
   MapPin,
   Ruler,
   Sofa,
   Sparkles,
   Tag,
   UserRound,
+  Wallet,
 } from "lucide-react";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import JsonLd from "@/components/layout/JsonLd";
 import { ContactCard, MobileContactBar } from "@/components/property/ContactCard";
 import PropertyCard, { statusStyles } from "@/components/property/PropertyCard";
+import { LaunchOfferPanel, offerSummary } from "@/components/property/LaunchOffer";
 import PropertyGallery from "@/components/property/PropertyGallery";
 import PropertyLocation from "@/components/property/PropertyLocation";
 import RERABadge from "@/components/property/RERABadge";
@@ -78,6 +82,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = [
     `${configs}${property.propertyType} in ${property.title}, ${place}.`,
     `Price ${price}.`,
+    offerSummary(property) ? `${offerSummary(property)}.` : "",
+    property.paymentPlan ? `Payment plan ${property.paymentPlan}.` : "",
     property.areaMin ? `Area ${formatAreaRange(property.areaMin, property.areaMax, property.areaUnit).replace(/\.$/, "")}.` : "",
     `Possession ${formatPossession(property.possessionDate, property.status)}.`,
     property.reraRegistered ? `RERA registered${property.reraNumber ? `: ${property.reraNumber}` : ""}.` : "",
@@ -133,6 +139,10 @@ export default async function ProjectDetailPage({ params }: Props) {
 
   const related = await getRelatedProperties(property, 4);
   const isPlot = property.category === "Plot";
+  const isResidential = property.category === "Residential";
+  const areaLabel = (value: number) => (value ? `${value.toLocaleString("en-IN")} ${property.areaUnit}` : "");
+  // The top option in the admin form means "or more" (5+ toilets, 3+ kitchens).
+  const roomLabel = (n: number, max: number) => (n ? (n >= max ? `${max}+` : String(n)) : "");
   const address = fullAddress(property);
   const status = statusStyles[property.status];
   const point =
@@ -167,7 +177,11 @@ export default async function ProjectDetailPage({ params }: Props) {
     { icon: Home, label: "Type", value: property.propertyType },
     { icon: Tag, label: "Status", value: property.status },
     { icon: KeyRound, label: "Ownership", value: property.ownership },
-    { icon: Compass, label: "Facing", value: property.facing },
+    { icon: Compass, label: "Facing", value: isResidential ? "" : property.facing },
+    { icon: Ruler, label: "Built-up Area", value: isResidential ? areaLabel(property.builtUpArea) : "" },
+    { icon: Ruler, label: "Carpet Area", value: isResidential ? areaLabel(property.carpetArea) : "" },
+    { icon: Bath, label: "Toilets", value: isResidential ? roomLabel(property.bathrooms, 5) : "" },
+    { icon: CookingPot, label: "Kitchens", value: isResidential ? roomLabel(property.kitchens, 3) : "" },
     { icon: Sofa, label: "Furnishing", value: isPlot ? "" : property.furnishing },
     { icon: FileCheck2, label: "Approved By", value: isPlot ? property.approvalAuthority : "" },
     { icon: LandPlot, label: "Corner Plot", value: isPlot && property.cornerPlot ? "Yes" : "" },
@@ -177,7 +191,7 @@ export default async function ProjectDetailPage({ params }: Props) {
       label: "Construction",
       value: isPlot && property.hasConstruction !== null ? (property.hasConstruction ? "Yes" : "No") : "",
     },
-    { icon: Calculator, label: `Rate per ${property.areaUnit}`, value: isPlot ? plotRate : "" },
+    { icon: Calculator, label: `Rate per ${property.areaUnit}`, value: isPlot || isResidential ? plotRate : "" },
     { icon: UserRound, label: "Builder", value: property.builder },
     { icon: BadgeCheck, label: "RERA No.", value: property.reraNumber },
   ].filter((d) => d.value);
@@ -266,10 +280,21 @@ export default async function ProjectDetailPage({ params }: Props) {
               <span className={cn("h-2 w-2 rounded-full", status.dot)} aria-hidden="true" />
               {property.status}
             </p>
-            <p className="mt-1 text-3xl font-bold tabular-nums text-ink">
-              {formatPriceRange(property.priceMin, property.priceMax)}
-            </p>
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+              <p className="text-3xl font-bold tabular-nums text-ink">
+                {formatPriceRange(property.priceMin, property.priceMax)}
+              </p>
+            </div>
             {property.builder && <p className="mt-1 text-sm text-muted">by {property.builder}</p>}
+            <LaunchOfferPanel property={property} />
+            {property.paymentPlan && (
+              <p className="mt-4 flex flex-wrap items-center gap-2 text-sm text-muted">
+                <span className="inline-flex items-center gap-1.5 font-medium text-ink">
+                  <Wallet className="h-4 w-4 text-info" aria-hidden="true" /> Payment plan
+                </span>
+                <span className="rounded-full bg-info-soft px-3 py-1 font-semibold text-info">{property.paymentPlan}</span>
+              </p>
+            )}
 
             <dl className="mt-5 flex flex-wrap gap-x-8 gap-y-3 border-t border-border pt-4">
               {facts.map(({ icon: Icon, label, value }) => (
