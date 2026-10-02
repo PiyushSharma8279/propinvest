@@ -38,6 +38,7 @@ export default function WhatsAppButton({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
+      data-project={projectTitle}
       aria-label={iconOnly ? `WhatsApp about ${projectTitle}` : undefined}
       className={cn(
         "inline-flex items-center justify-center gap-2 bg-whatsapp font-semibold text-on-primary transition hover:bg-whatsapp-hover",

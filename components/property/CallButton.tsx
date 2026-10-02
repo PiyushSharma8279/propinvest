@@ -2,24 +2,13 @@
 
 import { useState } from "react";
 import { Phone } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
 
 interface CallButtonProps {
   phone: string;
   projectTitle: string;
   className?: string;
   fullWidth?: boolean;
-}
-
-declare global {
-  interface Window {
-    gtag?: (...args: unknown[]) => void;
-  }
-}
-
-function trackLead(event: string, projectTitle: string) {
-  if (typeof window !== "undefined" && typeof window.gtag === "function") {
-    window.gtag("event", event, { project: projectTitle });
-  }
 }
 
 export default function CallButton({
@@ -34,7 +23,7 @@ export default function CallButton({
     return (
       <a
         href={`tel:${phone}`}
-        onClick={() => trackLead("call_number_dialed", projectTitle)}
+        data-project={projectTitle}
         className={`inline-flex items-center justify-center gap-2 rounded-control bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary transition hover:bg-primary-hover ${
           fullWidth ? "w-full" : ""
         } ${className}`}
@@ -50,7 +39,7 @@ export default function CallButton({
       type="button"
       onClick={() => {
         setRevealed(true);
-        trackLead("view_number_clicked", projectTitle);
+        trackEvent("view_number", { project_name: projectTitle });
       }}
       className={`inline-flex items-center justify-center gap-2 rounded-control bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary transition hover:bg-primary-hover ${
         fullWidth ? "w-full" : ""
