@@ -4,9 +4,8 @@ import { redirect } from "next/navigation";
 import { AUTH_COOKIE, signToken, TOKEN_TTL_SECONDS, verifyToken } from "@/lib/auth/jwt";
 import type { SessionUser } from "@/lib/types";
 import { env } from "../env";
-import { forbidden, unauthorized, validationError } from "../http";
+import { forbidden, HttpError, unauthorized } from "../http";
 import {
-  createUser,
   dummyHash,
   findUserByEmail,
   findUserById,
@@ -14,28 +13,49 @@ import {
   verifyPassword,
 } from "./user.service";
 
-export async function login(email: string, password: string): Promise<SessionUser> {
+/* ---------- Login throttling ---------- */
+
+const MAX_FAILED_LOGINS = 10;
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const failedLogins = new Map<string, { count: number; resetAt: number }>();
+
+/**
+ * Slows down password guessing: after 10 wrong attempts for the same email from the same IP,
+ * further attempts are refused for 15 minutes. In-memory, so it is per server instance — a
+ * speed bump, not a guarantee; a strong admin password is still the real protection.
+ */
+function assertLoginAllowed(key: string): void {
+  const entry = failedLogins.get(key);
+  if (!entry) return;
+  if (Date.now() > entry.resetAt) {
+    failedLogins.delete(key);
+    return;
+  }
+  if (entry.count >= MAX_FAILED_LOGINS) {
+    const minutes = Math.ceil((entry.resetAt - Date.now()) / 60000);
+    throw new HttpError(429, `Too many failed attempts. Try again in ${minutes} minute${minutes === 1 ? "" : "s"}.`);
+  }
+}
+
+function recordFailedLogin(key: string): void {
+  const now = Date.now();
+  const entry = failedLogins.get(key);
+  if (!entry || now > entry.resetAt) failedLogins.set(key, { count: 1, resetAt: now + LOGIN_WINDOW_MS });
+  else entry.count++;
+  if (failedLogins.size > 10_000) failedLogins.clear(); // never let the map grow unbounded
+}
+
+export async function login(email: string, password: string, ip = "unknown"): Promise<SessionUser> {
+  const key = `${ip}|${email.toLowerCase()}`;
+  assertLoginAllowed(key);
   const user = await findUserByEmail(email);
   // Always run bcrypt so "no such email" and "wrong password" take the same time.
   const ok = await verifyPassword(password, user?.passwordHash ?? (await dummyHash()));
   if (!user || !ok || !user.isActive) {
+    recordFailedLogin(key);
     throw unauthorized("Wrong email or password.");
   }
-  const session = toSessionUser(user);
-  await setAuthCookie(session);
-  return session;
-}
-
-export async function register(input: {
-  name: string;
-  email: string;
-  password: string;
-}): Promise<SessionUser> {
-  if (await findUserByEmail(input.email)) {
-    throw validationError({ email: "An account with this email already exists." });
-  }
-  // Public sign-up always creates a normal user. Admins are created with `npm run create-admin`.
-  const user = await createUser({ ...input, role: "user" });
+  failedLogins.delete(key);
   const session = toSessionUser(user);
   await setAuthCookie(session);
   return session;

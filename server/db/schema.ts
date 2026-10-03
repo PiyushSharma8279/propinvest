@@ -96,6 +96,8 @@ export const properties = pgTable(
     usps: jsonb("usps").$type<string[]>().notNull().default([]),
     amenities: jsonb("amenities").$type<string[]>().notNull().default([]),
     images: jsonb("images").$type<string[]>().notNull().default([]),
+    /** Optional brochure / price-list PDF. Never sent to the browser until a visitor leaves their number. */
+    brochureUrl: text("brochure_url").notNull().default(""),
 
     /** E.164, e.g. +919810000001 */
     phone: text("phone").notNull(),
@@ -133,7 +135,32 @@ export const properties = pgTable(
   ]
 );
 
+/** Enquiries left on the website (enquiry form, brochure download, price list request). */
+export const leads = pgTable(
+  "leads",
+  {
+    id: serial("id").primaryKey(),
+    name: text("name").notNull(),
+    /** E.164, e.g. +919810000001 */
+    phone: text("phone").notNull(),
+    budget: text("budget").notNull().default(""),
+    message: text("message").notNull().default(""),
+    /** One of leadSources. */
+    source: text("source").notNull().default("enquiry"),
+    /** One of leadStatuses. */
+    status: text("status").notNull().default("new"),
+    propertyId: integer("property_id").references(() => properties.id, { onDelete: "set null" }),
+    /** Title at the time of the enquiry, so the lead still reads well if the listing is renamed or removed. */
+    projectTitle: text("project_title").notNull().default(""),
+    pageUrl: text("page_url").notNull().default(""),
+    ...timestamps,
+  },
+  (t) => [index("leads_created_idx").on(t.createdAt), index("leads_status_idx").on(t.status)]
+);
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Property = typeof properties.$inferSelect;
 export type NewProperty = typeof properties.$inferInsert;
+export type Lead = typeof leads.$inferSelect;
+export type NewLead = typeof leads.$inferInsert;

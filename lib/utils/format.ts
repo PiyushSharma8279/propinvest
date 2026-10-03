@@ -81,3 +81,23 @@ export function formatAmountInWords(rupees: number): string {
   if (rupees >= 1000) return `${trimNumber(rupees / 1000)} Thousand`;
   return `${trimNumber(rupees)}`;
 }
+
+/** "NOIDA" / "uttar pradesh" → "Noida" / "Uttar Pradesh"; mixed-case input ("Greater Noida West") is kept as typed. */
+export function tidyPlaceName(value: string): string {
+  const v = value.trim().replace(/\s+/g, " ");
+  if (v !== v.toUpperCase() && v !== v.toLowerCase() && !/ [a-z]/.test(v)) return v;
+  return v.toLowerCase().replace(/(^|[\s-])(\p{L})/gu, (_, sep: string, ch: string) => sep + ch.toUpperCase());
+}
+
+/**
+ * De-duplicates place names case-insensitively ("NOIDA" and "Noida" become one "Noida"),
+ * sorted A-Z. Filters and search already match case-insensitively, so either spelling works.
+ */
+export function uniquePlaceNames(values: string[]): string[] {
+  const byKey = new Map<string, string>();
+  for (const value of values) {
+    const tidy = tidyPlaceName(value);
+    if (tidy && !byKey.has(tidy.toLowerCase())) byKey.set(tidy.toLowerCase(), tidy);
+  }
+  return [...byKey.values()].sort((a, b) => a.localeCompare(b));
+}

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   ExternalLink,
+  Inbox,
   LayoutDashboard,
   LayoutList,
   Menu,
@@ -46,6 +47,10 @@ const adminNav: NavGroup[] = [
       { href: "/admin/properties", label: "Properties", icon: LayoutList },
       { href: "/admin/properties/new", label: "Add Property", icon: Plus, exact: true },
     ],
+  },
+  {
+    title: "Customers",
+    items: [{ href: "/admin/leads", label: "Leads", icon: Inbox }],
   },
 ];
 

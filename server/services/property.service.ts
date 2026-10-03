@@ -27,6 +27,7 @@ import type {
   PropertyCategory,
   PropertyFilters,
 } from "@/lib/types";
+import { uniquePlaceNames } from "@/lib/utils/format";
 import { nextAvailableSlug, slugify } from "@/lib/utils/slug";
 import { db, schema } from "../db/client";
 import { HttpError, notFound } from "../http";
@@ -237,8 +238,7 @@ export const getLocationOptions = cache(
       .selectDistinct({ city: p.city, state: p.state, country: p.country })
       .from(p)
       .where(isPublic);
-    const unique = (values: string[]) =>
-      [...new Set(values.map((v) => v.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    const unique = uniquePlaceNames;
     return {
       cities: unique(rows.map((r) => r.city)),
       states: unique(rows.map((r) => r.state)),
@@ -367,7 +367,7 @@ export async function getAdminCities(): Promise<string[]> {
     .from(p)
     .where(and(eq(p.isDeleted, false), ne(p.city, "")))
     .orderBy(asc(p.city));
-  return rows.map((r) => r.city);
+  return uniquePlaceNames(rows.map((r) => r.city));
 }
 
 export async function getAdminCounts(): Promise<Record<AdminPropertyView, number>> {

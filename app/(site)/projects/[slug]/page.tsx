@@ -27,7 +27,8 @@ import {
 } from "lucide-react";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import JsonLd from "@/components/layout/JsonLd";
-import { ContactCard, MobileContactBar } from "@/components/property/ContactCard";
+import BrochureButton from "@/components/leads/BrochureButton";
+import { ContactCard, EnquiryCard, MobileContactBar } from "@/components/property/ContactCard";
 import PropertyCard, { statusStyles } from "@/components/property/PropertyCard";
 import { LaunchOfferPanel, offerSummary } from "@/components/property/LaunchOffer";
 import PropertyGallery from "@/components/property/PropertyGallery";
@@ -365,6 +366,12 @@ export default async function ProjectDetailPage({ params }: Props) {
             </Panel>
           )}
 
+          {/* Phones: the sidebar is hidden, so the enquiry form sits in the page flow. */}
+          <div className="flex flex-col gap-3 lg:hidden">
+            <EnquiryCard property={property} id="enquire" />
+            <BrochureButton propertyId={property.id} projectTitle={property.title} hasBrochure={!!property.brochureUrl} />
+          </div>
+
           {point && (
             <Panel title="Location Information" id="location">
               <PropertyLocation point={point} address={address} />
@@ -372,9 +379,11 @@ export default async function ProjectDetailPage({ params }: Props) {
           )}
         </div>
 
-        <aside className="hidden lg:block">
+        <aside className="hidden lg:flex lg:flex-col lg:gap-4">
+          <ContactCard property={property} />
+          {/* Follows the visitor down the page. */}
           <div className="sticky top-32">
-            <ContactCard property={property} />
+            <EnquiryCard property={property} />
           </div>
         </aside>
       </div>

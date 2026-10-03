@@ -1,29 +1,16 @@
-import { BadgeCheck, Building2 } from "lucide-react";
+import { BadgeCheck, Building2, ClipboardList } from "lucide-react";
+import BrochureButton from "@/components/leads/BrochureButton";
+import EnquiryForm from "@/components/leads/EnquiryForm";
 import { siteConfig } from "@/lib/site-config";
 import type { Property } from "@/lib/types";
 import CallButton from "./CallButton";
 import WhatsAppButton from "./WhatsAppButton";
 
-type Contact = Pick<Property, "title" | "phone" | "whatsapp" | "locality" | "city">;
-
-function ContactButtons({ property }: { property: Contact }) {
-  return (
-    <>
-      <CallButton phone={property.phone} projectTitle={property.title} fullWidth />
-      <WhatsAppButton
-        whatsapp={property.whatsapp}
-        projectTitle={property.title}
-        locality={property.locality}
-        city={property.city}
-        fullWidth
-      />
-    </>
-  );
-}
+type Contact = Pick<Property, "id" | "title" | "phone" | "whatsapp" | "locality" | "city" | "brochureUrl">;
 
 const cardClass = "rounded-card border border-border bg-surface p-5 shadow-card";
 
-/** Sidebar cards on desktop: "Request details" + builder information. */
+/** Sidebar cards on desktop: contact buttons + builder information. */
 export function ContactCard({
   property,
 }: {
@@ -37,7 +24,15 @@ export function ContactCard({
         <h2 className="text-base font-semibold text-ink">Interested in this property?</h2>
         <p className="mt-0.5 text-sm text-muted">Get the price sheet, floor plans and a site visit.</p>
         <div className="mt-4 flex flex-col gap-2">
-          <ContactButtons property={property} />
+          <CallButton phone={property.phone} projectTitle={property.title} fullWidth />
+          <WhatsAppButton
+            whatsapp={property.whatsapp}
+            projectTitle={property.title}
+            locality={property.locality}
+            city={property.city}
+            fullWidth
+          />
+          <BrochureButton propertyId={property.id} projectTitle={property.title} hasBrochure={!!property.brochureUrl} />
         </div>
         <p className="mt-4 text-xs leading-relaxed text-subtle">
           By contacting, you agree to be reached by the project team regarding {property.title}.{" "}
@@ -73,11 +68,40 @@ export function ContactCard({
   );
 }
 
+/** "Enquire Now" form card. Sticky in the desktop sidebar; inline above the map on phones. */
+export function EnquiryCard({ property, id }: { property: Contact; id?: string }) {
+  return (
+    <section id={id} className={`${cardClass} scroll-mt-32`}>
+      <h2 className="text-base font-semibold text-ink">Enquire Now</h2>
+      <p className="mt-0.5 text-sm text-muted">Leave your number and our team will call you back.</p>
+      <div className="mt-4">
+        <EnquiryForm propertyId={property.id} projectTitle={property.title} />
+      </div>
+    </section>
+  );
+}
+
 /** Fixed bottom bar on phones. */
 export function MobileContactBar({ property }: { property: Contact }) {
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 flex gap-2 border-t border-border bg-surface/95 p-3 backdrop-blur lg:hidden">
-      <ContactButtons property={property} />
+      <CallButton phone={property.phone} projectTitle={property.title} fullWidth className="px-2" />
+      <WhatsAppButton
+        whatsapp={property.whatsapp}
+        projectTitle={property.title}
+        locality={property.locality}
+        city={property.city}
+        fullWidth
+        className="px-2"
+      />
+      <a
+        href="#enquire"
+        aria-label="Enquire now"
+        className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-control border border-border bg-surface px-3 text-sm font-semibold text-ink"
+      >
+        <ClipboardList className="h-4 w-4" aria-hidden="true" />
+        Enquire
+      </a>
     </div>
   );
 }

@@ -1,11 +1,15 @@
-/** "Skyline Arte — Phase 2!" → "skyline-arte-phase-2" */
+/**
+ * "Skyline Arte — Phase 2!" → "skyline-arte-phase-2", "SECTOR 145,5% PLOT" → "sector-145-5-plot".
+ * Punctuation separates words (so "145,5" doesn't become "1455"); apostrophes are just dropped.
+ */
 export function slugify(value: string): string {
   return value
     .toLowerCase()
     .normalize("NFKD")
     .replace(/[̀-ͯ]/g, "")
     .replace(/&/g, " and ")
-    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/['’]/g, "")
+    .replace(/[^a-z0-9\s-]/g, " ")
     .trim()
     .replace(/[\s_]+/g, "-")
     .replace(/-+/g, "-")

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertCircle, ArrowLeft, Building, Building2, Check, LandPlot, Loader2 } from "lucide-react";
+import { AlertCircle, ArrowLeft, Building, Building2, Check, FileText, LandPlot, Loader2, X } from "lucide-react";
 import ImageUpload from "@/components/forms/ImageUpload";
 import LocationPicker from "@/components/forms/LocationPicker";
 import RichTextEditor from "@/components/forms/RichTextEditor";
@@ -12,7 +12,7 @@ import { Button, LinkButton } from "@/components/ui/Button";
 import { Section } from "@/components/ui/Card";
 import { Checkbox, Field, FormAlert } from "@/components/ui/Field";
 import { hintClass, inputClass, labelClass } from "@/components/ui/styles";
-import { api, ApiError } from "@/lib/api-client";
+import { api, ApiError, MAX_UPLOAD_MB, uploadFile } from "@/lib/api-client";
 import {
   amenitySuggestions,
   approvalAuthorityOptions,
@@ -103,6 +103,7 @@ interface FormState {
   usps: string;
   amenities: string[];
   images: string[];
+  brochureUrl: string;
   phone: string;
   whatsapp: string;
   ownership: string;
@@ -166,6 +167,7 @@ function initialState(property: Property | undefined, category: PropertyCategory
     usps: property?.usps.join("\n") ?? "",
     amenities: property?.amenities ?? [],
     images: property?.images ?? [],
+    brochureUrl: property?.brochureUrl ?? "",
     phone: property?.phone ?? "",
     whatsapp: property && property.whatsapp !== property.phone.replace("+", "") ? property.whatsapp : "",
     ownership: property?.ownership ?? "",
@@ -916,6 +918,18 @@ export default function PropertyForm({
         />
       </Section>
 
+      <Section
+        title="Brochure / price list"
+        description="Optional PDF. Visitors get it after leaving their name and number, and each download shows up in Leads."
+      >
+        <BrochureField
+          value={form.brochureUrl}
+          onChange={(url) => set("brochureUrl", url)}
+          error={errors.brochureUrl}
+          onBusyChange={setUploading}
+        />
+      </Section>
+
       <Section title="Amenities">
         <TagField
           name="amenities"
@@ -957,6 +971,81 @@ export default function PropertyForm({
 }
 
 /** Segmented single-choice buttons; clicking the selected option clears it. */
+/** Upload a PDF (ImageKit), or paste a link for files over the upload limit (e.g. Google Drive). */
+function BrochureField({
+  value,
+  onChange,
+  error,
+  onBusyChange,
+}: {
+  value: string;
+  onChange: (url: string) => void;
+  error?: string;
+  onBusyChange: (busy: boolean) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  async function handleFile(file: File | undefined) {
+    if (!file) return;
+    setUploadError(null);
+    setBusy(true);
+    onBusyChange(true);
+    try {
+      const { url } = await uploadFile(file, "brochures");
+      onChange(url);
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Upload failed.");
+    } finally {
+      setBusy(false);
+      onBusyChange(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {value ? (
+        <div className="flex items-center gap-3 rounded-control border border-border p-3">
+          <FileText className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+          <a href={value} target="_blank" rel="noopener noreferrer" className="min-w-0 flex-1 truncate text-sm font-medium text-primary hover:underline">
+            {decodeURIComponent(value.split("/").pop() || value)}
+          </a>
+          <Button variant="danger" size="sm" onClick={() => onChange("")} aria-label="Remove brochure">
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center gap-3">
+          <Button variant="outline" onClick={() => inputRef.current?.click()} loading={busy}>
+            <FileText className="h-4 w-4" /> Upload PDF
+          </Button>
+          <span className={hintClass}>PDF up to {MAX_UPLOAD_MB} MB</span>
+        </div>
+      )}
+      <input
+        ref={inputRef}
+        type="file"
+        accept="application/pdf"
+        className="hidden"
+        onChange={(e) => handleFile(e.target.files?.[0])}
+      />
+      {!value && (
+        <Field label="…or paste a link" hint="For bigger files: a Google Drive or Dropbox share link." error={error}>
+          <input
+            type="url"
+            className={inputClass}
+            placeholder="https://drive.google.com/…"
+            onBlur={(e) => e.target.value.trim() && onChange(e.target.value.trim())}
+          />
+        </Field>
+      )}
+      {(uploadError || (value && error)) && <p className="text-sm text-danger">{uploadError ?? error}</p>}
+    </div>
+  );
+}
+
 function ChoiceGroup({
   name,
   value,

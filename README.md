@@ -69,10 +69,10 @@ scripts/             create-admin
   `users` (serial id, name, email, password hash, role `admin` | `user`) and
   `properties` (serial id, auto-generated unique slug, full address, city, state,
   country, PIN, latitude/longitude, `isFeatured`, `isActive`, `isDeleted`…).
-- **Auth:** email + password (bcrypt). There is no sign-up page: only admins sign
-  in, at `/login`. Create accounts with `POST /api/auth/register` (e.g. Postman)
-  or `npm run create-admin`, then set `role = 'admin'` in the `users` table. On login a JWT is stored in an httpOnly
-  cookie. `proxy.ts` protects `/admin` (admins) and `/account` (any user);
+- **Auth:** email + password (bcrypt). There is no sign-up page or sign-up API: only
+  admins sign in, at `/login`, and they are created with `npm run create-admin`.
+  Repeated wrong passwords are throttled (10 per 15 minutes per IP and email). On login
+  a JWT is stored in an httpOnly cookie. `proxy.ts` protects `/admin` (admins) and `/account` (any user);
   every API controller re-checks the user against the database.
 - **Deleting is soft:** it sets `isDeleted = true`. Deleted listings disappear
   from the site and show under **Admin → Deleted**, where they can be restored.
@@ -89,7 +89,6 @@ scripts/             create-admin
 
 | Method | Path | Who | What |
 |---|---|---|---|
-| POST | `/api/auth/register` | anyone | create a `user` account (API only — no sign-up page) |
 | POST | `/api/auth/login` | anyone | sign in (sets the cookie) |
 | POST | `/api/auth/logout` | anyone | sign out |
 | GET | `/api/auth/me` | anyone | current user or `null` |
@@ -167,9 +166,9 @@ Environment Variables), plus:
 
 Natural next steps as the catalogue grows:
 
-- **Lead tracking**: the Call/WhatsApp buttons already fire a `gtag` event
-  (`view_number_clicked`, `call_number_dialed`) if `window.gtag` exists —
-  wire up Google Analytics or a CRM webhook to capture these as leads.
+- **Lead tracking**: set `NEXT_PUBLIC_GA_ID` to enable Google Analytics 4. It
+  records page views plus `view_number`, `call_click` and `whatsapp_click`
+  events (with `project_name`) — add a CRM webhook to capture these as leads.
 - **Real map integration** on project detail pages (Google Maps or
   Mapbox embed) once you have real coordinates per project.
 

@@ -37,6 +37,16 @@ export function BrandMark({
   );
 }
 
+/** "by Maa Rudrani Properties" with the company name in red (#c62828 stays readable at small sizes). */
+function Byline({ light }: { light: boolean }) {
+  const [by, ...name] = siteConfig.byline.split(" ");
+  return (
+    <>
+      {by} <span className={light ? "text-on-primary" : "text-[#c62828]"}>{name.join(" ")}</span>
+    </>
+  );
+}
+
 /** Brand lockup: logo artwork + "InvestsProperty" + byline (or a custom subtitle). */
 export default function Logo({
   tone = "dark",
@@ -60,8 +70,14 @@ export default function Logo({
         >
           {siteConfig.name}
         </span>
-        <span className={cn("mt-1 truncate text-[11px] font-medium", tone === "light" ? "text-on-primary/70" : "text-muted")}>
-          {subtitle}
+        <span
+          className={cn(
+            "mt-1 truncate font-semibold",
+            size === "md" ? "text-[13px]" : "text-xs",
+            tone === "light" ? "text-on-primary" : "text-ink"
+          )}
+        >
+          {subtitle === siteConfig.byline ? <Byline light={tone === "light"} /> : subtitle}
         </span>
       </span>
     </span>

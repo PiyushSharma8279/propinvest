@@ -9,7 +9,7 @@ export const ALLOWED_UPLOAD_TYPES = [
   "image/png",
   "image/webp",
   "image/avif",
-  "image/svg+xml",
+  // No SVG: SVG files can carry scripts.
   "application/pdf",
 ];
 
@@ -31,7 +31,7 @@ export interface UploadedFile {
 export function validateUpload(file: unknown): File {
   if (!(file instanceof File) || file.size === 0) throw badRequest("No file received.");
   if (!ALLOWED_UPLOAD_TYPES.includes(file.type)) {
-    throw badRequest("Only JPG, PNG, WebP, AVIF, SVG images or PDF files are allowed.");
+    throw badRequest("Only JPG, PNG, WebP or AVIF images, or PDF files, are allowed.");
   }
   if (file.size > MAX_UPLOAD_BYTES) throw badRequest("File is larger than 4 MB.");
   return file;

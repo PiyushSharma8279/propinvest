@@ -8,6 +8,7 @@ import {
   Eye,
   FilePen,
   EyeOff,
+  Inbox,
   LandPlot,
   LayoutList,
   Plus,
@@ -25,6 +26,7 @@ import {
   getAdminCounts,
   listAdminProperties,
 } from "@/server/services/property.service";
+import { getLeadCounts } from "@/server/services/lead.service";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
@@ -35,11 +37,12 @@ const categoryIcons: Record<PropertyCategory, typeof Building> = {
 };
 
 export default async function AdminDashboardPage() {
-  const [counts, byCategory, cities, recent] = await Promise.all([
+  const [counts, byCategory, cities, recent, leadCounts] = await Promise.all([
     getAdminCounts(),
     getAdminCategoryCounts(),
     getAdminCities(),
     listAdminProperties({ view: "all", sort: "updated", dir: "desc", pageSize: 5 }),
+    getLeadCounts(),
   ]);
 
   const stats = [
@@ -64,6 +67,23 @@ export default async function AdminDashboardPage() {
           <Plus className="h-4 w-4" /> Add property
         </LinkButton>
       </div>
+
+      {/* New leads */}
+      <Link
+        href="/admin/leads?status=new"
+        className="group flex items-center gap-4 rounded-card border border-border bg-surface p-4 shadow-card transition hover:border-primary/40 hover:shadow-card-hover"
+      >
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-highlight-soft text-highlight">
+          <Inbox className="h-5 w-5" aria-hidden="true" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold text-ink">
+            {leadCounts.new} new {leadCounts.new === 1 ? "lead" : "leads"} to call
+          </p>
+          <p className="text-sm text-muted">{leadCounts.all} leads in total from the website</p>
+        </div>
+        <ArrowRight className="h-4 w-4 text-muted group-hover:text-primary" aria-hidden="true" />
+      </Link>
 
       {/* Stat tiles */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">

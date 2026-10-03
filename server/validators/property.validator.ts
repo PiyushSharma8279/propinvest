@@ -7,6 +7,7 @@ import {
   possessionStatuses,
 } from "@/lib/constants/property";
 import { richTextToPlain, sanitizeRichText } from "@/lib/rich-text";
+import { tidyPlaceName } from "@/lib/utils/format";
 import { isValidLatLng } from "@/lib/utils/maps";
 import { normalizeIndianNumber } from "@/lib/utils/phone";
 import type { NewProperty } from "../db/schema";
@@ -59,9 +60,9 @@ export function validatePropertyInput(
   const description = sanitizeRichText(str(body, "description", 50000));
   if (!richTextToPlain(description)) v.add("description", "Add a short description.");
 
-  const city = str(body, "city", 100);
+  const city = tidyPlaceName(str(body, "city", 100));
   if (!city) v.add("city", "Enter the city.");
-  const state = str(body, "state", 100);
+  const state = tidyPlaceName(str(body, "state", 100));
   if (!state) v.add("state", "Enter the state.");
   const country = str(body, "country", 100) || DEFAULT_COUNTRY;
 
@@ -117,6 +118,10 @@ export function validatePropertyInput(
   const images = strArray(body, "images", 30).filter((url) => /^(https:\/\/|\/)/.test(url));
   if (images.length === 0) v.add("images", "Upload at least one photo.");
 
+  const brochureUrl = str(body, "brochureUrl", 1000);
+  const validBrochure = !brochureUrl || /^https:\/\/\S+$/.test(brochureUrl);
+  if (!validBrochure) v.add("brochureUrl", "Enter a full link starting with https://");
+
   if (mode === "publish" && v.hasErrors) throw validationError(v.errors);
 
   const resolvedCategory = category ?? "Residential";
@@ -159,6 +164,7 @@ export function validatePropertyInput(
     usps: strArray(body, "usps"),
     amenities: strArray(body, "amenities"),
     images,
+    brochureUrl: validBrochure ? brochureUrl : "",
     phone: contact?.phone ?? "",
     whatsapp: whatsapp?.whatsapp ?? "",
     ownership: str(body, "ownership", 100),

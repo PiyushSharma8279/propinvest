@@ -17,15 +17,3 @@ export function validateLogin(body: Record<string, unknown>) {
   return { email, password: pass };
 }
 
-export function validateRegister(body: Record<string, unknown>) {
-  const name = str(body, "name", 100);
-  const email = str(body, "email", 254);
-  const pass = password(body);
-  const v = collectErrors();
-  if (!name) v.add("name", "Enter your name.");
-  if (!EMAIL_RE.test(email)) v.add("email", "Enter a valid email.");
-  if (pass.length < 8) v.add("password", "Use at least 8 characters.");
-  if (pass.length > 72) v.add("password", "Use at most 72 characters.");
-  if (v.hasErrors) throw validationError(v.errors);
-  return { name, email, password: pass };
-}

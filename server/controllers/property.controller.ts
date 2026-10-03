@@ -17,7 +17,9 @@ async function propertyId(params: IdContext["params"]): Promise<number> {
 export const list = handle(async (request: Request) => {
   const params = Object.fromEntries(new URL(request.url).searchParams);
   const result = await propertyService.listPublicProperties(parsePropertyFilters(params));
-  return json(result);
+  // The brochure is only handed out through POST /api/leads, after the visitor leaves a number.
+  const items = result.items.map((item) => ({ ...item, brochureUrl: "" }));
+  return json({ ...result, items });
 });
 
 /** POST /api/properties — admin. Slug is generated from the title. */
