@@ -11,10 +11,10 @@ export default function RERABadge({ reraNumber, size = "sm" }: RERABadgeProps) {
   return (
     <span
       className="inline-flex items-center gap-1.5 rounded-full bg-primary-soft px-2.5 py-1 text-xs font-semibold text-primary"
-      title={reraNumber ? `RERA registered: ${reraNumber}` : "RERA registered"}
+      title={`RERA registered${reraNumber ? `: ${reraNumber}` : ""} (as provided by the builder; verify on the state RERA portal)`}
     >
       <ShieldCheck className={dimension} strokeWidth={2.25} aria-hidden="true" />
-      RERA Verified
+      RERA Registered
     </span>
   );
 }

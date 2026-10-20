@@ -9,11 +9,11 @@ export const dynamic = "force-static";
 
 export const metadata: Metadata = {
   title: "About Us",
-  description: `${siteConfig.name} ${siteConfig.byline} lists RERA-verified homes, commercial spaces and plots across India, with direct access to project teams.`,
+  description: `${siteConfig.name} ${siteConfig.byline} lists homes, commercial spaces and plots across India, with property details and contact options for buyers.`,
   alternates: { canonical: "/about" },
   openGraph: {
     title: `About ${siteConfig.name}`,
-    description: `Who we are and how ${siteConfig.name} verifies every listing.`,
+    description: `Who we are and how to review the property information we list.`,
     url: `${siteConfig.url}/about`,
   },
 };
@@ -21,8 +21,8 @@ export const metadata: Metadata = {
 const values = [
   {
     icon: ShieldCheck,
-    title: "Verified first",
-    body: "Every project shows its RERA registration so you can check it on the state portal before paying anything.",
+    title: "Check the details",
+    body: "RERA details are shown when provided. Check the registration on the relevant state portal and independently confirm other property details before paying.",
   },
   {
     icon: MapPinned,

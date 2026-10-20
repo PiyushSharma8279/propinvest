@@ -50,7 +50,7 @@ export default async function OpengraphImage() {
             {siteConfig.tagline}
           </span>
           <span style={{ fontSize: 26, marginTop: 20, color: "#6b7280", lineHeight: 1.35 }}>
-            RERA-verified homes, commercial spaces and plots across India. Call or WhatsApp the
+            Explore homes, commercial spaces and plots across India. Call or WhatsApp the
             project team directly.
           </span>
           <div

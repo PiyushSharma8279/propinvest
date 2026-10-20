@@ -28,8 +28,8 @@ const trustPoints = [
   {
     icon: ShieldCheck,
     stamp: true,
-    title: "Every listing, verified",
-    body: "We display the RERA registration number on every project card, so you can cross-check it on the state RERA portal before you commit.",
+    title: "Verification details shown",
+    body: "Where a listing includes RERA details, check its registration on the state RERA portal before you commit.",
   },
   {
     icon: MapPinned,
@@ -51,7 +51,7 @@ export default async function HomePage() {
   ]);
 
   const stats = [
-    { label: "Verified listings", value: `${counts.properties}+` },
+    { label: "Listed properties", value: `${counts.properties}` },
     { label: "Cities covered", value: `${counts.cities}` },
     { label: "Builders on platform", value: `${counts.builders}+` },
   ];
@@ -64,7 +64,7 @@ export default async function HomePage() {
           <div>
             <p className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-surface px-3 py-1 text-xs font-semibold text-primary shadow-card">
               <ShieldCheck className="h-3.5 w-3.5" />
-              RERA-verified listings only
+              Property details for your review
             </p>
             <h1 className="mt-5 max-w-xl text-4xl font-bold leading-[1.1] text-ink sm:text-5xl">
               Find a home you can <span className="text-primary">trust</span>, in the place you love.

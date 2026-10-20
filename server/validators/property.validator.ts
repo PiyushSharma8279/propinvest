@@ -5,6 +5,8 @@ import {
   propertyTypes,
   DEFAULT_COUNTRY,
   possessionStatuses,
+  verificationStatuses,
+  availabilityStatuses,
 } from "@/lib/constants/property";
 import { richTextToPlain, sanitizeRichText } from "@/lib/rich-text";
 import { tidyPlaceName } from "@/lib/utils/format";
@@ -122,6 +124,22 @@ export function validatePropertyInput(
   const validBrochure = !brochureUrl || /^https:\/\/\S+$/.test(brochureUrl);
   if (!validBrochure) v.add("brochureUrl", "Enter a full link starting with https://");
 
+  const verificationStatus = oneOf(verificationStatuses, str(body, "verificationStatus")) ?? "unverified";
+  // "2026-10-20" from a date input; a verified listing with no date is taken as verified today.
+  const verifiedRaw = str(body, "lastVerifiedAt", 10);
+  let lastVerifiedAt: Date | null = /^\d{4}-\d{2}-\d{2}$/.test(verifiedRaw) ? new Date(`${verifiedRaw}T12:00:00+05:30`) : null;
+  if (lastVerifiedAt && (Number.isNaN(lastVerifiedAt.getTime()) || lastVerifiedAt.getTime() > Date.now() + 86_400_000)) {
+    v.add("lastVerifiedAt", "Enter a date that is not in the future.");
+    lastVerifiedAt = null;
+  }
+  if (verificationStatus === "verified" && !lastVerifiedAt) lastVerifiedAt = new Date();
+
+  const availability = oneOf(availabilityStatuses, str(body, "availability")) ?? "available";
+  const confirmedRaw = str(body, "availabilityConfirmedAt", 10);
+  const availabilityConfirmedAt = /^\d{4}-\d{2}-\d{2}$/.test(confirmedRaw) ? new Date(`${confirmedRaw}T12:00:00+05:30`) : null;
+  const rawPartner = Number(body.partnerId);
+  const partnerId = Number.isInteger(rawPartner) && rawPartner > 0 ? rawPartner : null;
+
   if (mode === "publish" && v.hasErrors) throw validationError(v.errors);
 
   const resolvedCategory = category ?? "Residential";
@@ -175,6 +193,13 @@ export function validatePropertyInput(
     cornerPlot: isPlot && bool(body, "cornerPlot"),
     openSides: isPlot ? openSides : 0,
     hasConstruction: isPlot ? hasConstruction : null,
+    listingSource: str(body, "listingSource", 300),
+    verificationStatus,
+    lastVerifiedAt,
+    availability,
+    availabilityConfirmedAt:
+      availabilityConfirmedAt && !Number.isNaN(availabilityConfirmedAt.getTime()) ? availabilityConfirmedAt : null,
+    partnerId,
     isFeatured: bool(body, "isFeatured"),
     isActive: body.isActive === undefined ? true : bool(body, "isActive"),
   };

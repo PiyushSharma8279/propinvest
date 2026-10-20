@@ -27,7 +27,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   const query = toSearchParams(params).toString();
 
   const title = `${heading} for Sale in ${place} - ${total} ${total === 1 ? "Listing" : "Listings"}`;
-  const description = `Browse ${total} verified ${heading.toLowerCase()} in ${place}. Compare price, area, possession and exact location, then call or WhatsApp the project team directly.`;
+  const description = `Browse ${total} ${heading.toLowerCase()} in ${place}. Compare price, area, possession and exact location, then call or WhatsApp the project team directly.`;
   const path = `/projects${query ? `?${query}` : ""}`;
   return {
     title,

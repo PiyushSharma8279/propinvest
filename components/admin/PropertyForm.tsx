@@ -32,8 +32,12 @@ import {
   possessionStatuses,
   propertyTypes,
   sqmPerUnit,
+  verificationStatuses,
+  verificationStatusLabels,
   type PossessionStatus,
   type PropertyCategory,
+  type VerificationStatus,
+  type AvailabilityStatus,
 } from "@/lib/constants/property";
 import type { Property } from "@/lib/types";
 import { cn } from "@/lib/utils/cn";
@@ -49,6 +53,7 @@ import {
 import type { LatLng } from "@/lib/utils/maps";
 import { launchOffer } from "@/lib/utils/launch-offer";
 import { slugify } from "@/lib/utils/slug";
+import { istDateKey as toIstDate } from "@/lib/utils/dates";
 
 const categoryIcons: Record<PropertyCategory, typeof Building> = {
   Residential: Building2,
@@ -116,6 +121,15 @@ interface FormState {
   cornerPlot: boolean;
   openSides: string;
   hasConstruction: "" | "yes" | "no";
+  listingSource: string;
+  verificationStatus: VerificationStatus;
+  /** "2026-10-20" or "". */
+  lastVerifiedAt: string;
+  availability: AvailabilityStatus;
+  /** "2026-10-20" or "". */
+  availabilityConfirmedAt: string;
+  /** partners.id as a string, or "". */
+  partnerId: string;
   isFeatured: boolean;
   isActive: boolean;
 }
@@ -178,6 +192,12 @@ function initialState(property: Property | undefined, category: PropertyCategory
     cornerPlot: property?.cornerPlot ?? false,
     openSides: numberToField(property?.openSides),
     hasConstruction: property?.hasConstruction == null ? "" : property.hasConstruction ? "yes" : "no",
+    listingSource: property?.listingSource ?? "",
+    verificationStatus: (property?.verificationStatus as VerificationStatus | undefined) ?? "unverified",
+    lastVerifiedAt: property?.lastVerifiedAt ? toIstDate(new Date(property.lastVerifiedAt)) : "",
+    availability: (property?.availability as AvailabilityStatus | undefined) ?? "available",
+    availabilityConfirmedAt: property?.availabilityConfirmedAt ? toIstDate(new Date(property.availabilityConfirmedAt)) : "",
+    partnerId: property?.partnerId ? String(property.partnerId) : "",
     isFeatured: property?.isFeatured ?? false,
     isActive: property?.isActive ?? true,
   };
@@ -223,7 +243,10 @@ export default function PropertyForm({
   defaultCategory = "Residential",
   title,
   headerExtra,
+  partners = [],
 }: {
+  /** Owner / partner choices for the "Owner / partner" field. */
+  partners?: { id: number; name: string; company: string }[];
   property?: Property;
   defaultCategory?: PropertyCategory;
   /** Page heading shown in the sticky header next to Cancel / Save. */
@@ -902,8 +925,83 @@ export default function PropertyForm({
           onChange={(e) => set("reraRegistered", e.target.checked)}
         />
         {form.reraRegistered && (
-          <Field label="RERA number" hint="Optional" error={errors.reraNumber}>
+          <Field
+            label="RERA number"
+            hint="Shown on the listing. Copy it exactly from the state RERA portal."
+            error={errors.reraNumber}
+          >
             <input {...bind("reraNumber")} placeholder="e.g. UPRERAPRJ123456" />
+          </Field>
+        )}
+      </Section>
+
+      <Section
+        title="Source & verification"
+        description="For the team only. The website says “verified” only when this is set to Verified, and shows the date."
+      >
+        <Field
+          label="Where these details came from"
+          hint="e.g. Builder's official brochure and price list received 12 Oct 2026"
+          error={errors.listingSource}
+        >
+          <input {...bind("listingSource")} maxLength={300} />
+        </Field>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Verification status" hint="Verified = checked against the RERA portal and builder documents">
+            <select
+              value={form.verificationStatus}
+              onChange={(e) => {
+                const next = e.target.value as VerificationStatus;
+                set("verificationStatus", next);
+                if (next === "verified" && !form.lastVerifiedAt) set("lastVerifiedAt", toIstDate(new Date()));
+              }}
+            >
+              {verificationStatuses.map((s) => (
+                <option key={s} value={s}>
+                  {verificationStatusLabels[s]}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Last verified on" error={errors.lastVerifiedAt}>
+            <input {...bind("lastVerifiedAt")} type="date" disabled={form.verificationStatus !== "verified"} />
+          </Field>
+          <Field label="Availability" hint="Unavailable listings are removed from the website but kept here">
+            <select
+              value={form.availability}
+              onChange={(e) => {
+                set("availability", e.target.value as AvailabilityStatus);
+                set("availabilityConfirmedAt", toIstDate(new Date()));
+              }}
+            >
+              <option value="available">Available</option>
+              <option value="unavailable">Unavailable (sold / withdrawn)</option>
+            </select>
+          </Field>
+          <Field label="Availability last confirmed" hint="Date the owner / builder last confirmed it">
+            <div className="flex gap-2">
+              <input {...bind("availabilityConfirmedAt")} type="date" />
+              <button
+                type="button"
+                onClick={() => set("availabilityConfirmedAt", toIstDate(new Date()))}
+                className="shrink-0 rounded-control border border-border px-2 text-xs font-medium text-muted hover:border-primary hover:text-primary"
+              >
+                Today
+              </button>
+            </div>
+          </Field>
+        </div>
+        {partners.length > 0 && (
+          <Field label="Owner / partner" hint="Who supplied this listing (Admin → Partners)">
+            <select {...bind("partnerId")}>
+              <option value="">— Not linked —</option>
+              {partners.map((pt) => (
+                <option key={pt.id} value={pt.id}>
+                  {pt.name}
+                  {pt.company ? ` (${pt.company})` : ""}
+                </option>
+              ))}
+            </select>
           </Field>
         )}
       </Section>

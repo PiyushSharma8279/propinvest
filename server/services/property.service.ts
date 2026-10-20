@@ -10,6 +10,7 @@ import {
   gte,
   ilike,
   inArray,
+  lt,
   lte,
   ne,
   or,
@@ -43,7 +44,8 @@ function assertId(id: number): void {
 }
 
 /** Visible on the public website: published (not a draft), active and not soft-deleted. */
-const isPublic = and(eq(p.isDraft, false), eq(p.isActive, true), eq(p.isDeleted, false))!;
+/** On the website: not a draft, active, not deleted, and not marked unavailable (sold / let / withdrawn). */
+const isPublic = and(eq(p.isDraft, false), eq(p.isActive, true), eq(p.isDeleted, false), ne(p.availability, "unavailable"))!;
 
 /** Escapes % and _ so user input is matched literally inside ILIKE. */
 function likeEscape(value: string): string {
@@ -151,6 +153,8 @@ function reviveDates(row: Property): Property {
     createdAt: new Date(row.createdAt),
     updatedAt: new Date(row.updatedAt),
     deletedAt: row.deletedAt ? new Date(row.deletedAt) : null,
+    lastVerifiedAt: row.lastVerifiedAt ? new Date(row.lastVerifiedAt) : null,
+    availabilityConfirmedAt: row.availabilityConfirmedAt ? new Date(row.availabilityConfirmedAt) : null,
   };
 }
 
@@ -490,4 +494,18 @@ export async function restoreProperty(id: number): Promise<Property> {
     .returning();
   if (!row) throw notFound("Property not found.");
   return row;
+}
+
+/** Every listing that isn't deleted (live, hidden and drafts) — for the listing quality report. */
+export async function getAllUndeletedProperties(): Promise<Property[]> {
+  return db.select().from(p).where(eq(p.isDeleted, false)).orderBy(desc(p.updatedAt));
+}
+
+/** Listings marked verified with a verification date in [from, to). */
+export async function countVerifiedListings(from: Date, to: Date = new Date()): Promise<number> {
+  const [{ total }] = await db
+    .select({ total: count() })
+    .from(p)
+    .where(and(eq(p.isDeleted, false), eq(p.verificationStatus, "verified"), gte(p.lastVerifiedAt, from), lt(p.lastVerifiedAt, to)));
+  return total;
 }

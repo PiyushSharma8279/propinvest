@@ -56,7 +56,7 @@ export default function PropertyCard({ property }: { property: Property }) {
             className="absolute right-2.5 top-2.5 grid h-7 w-7 place-items-center rounded-full bg-surface/95 text-primary shadow-card"
             title={property.reraNumber ? `RERA registered: ${property.reraNumber}` : "RERA registered"}
           >
-            <ShieldCheck className="h-4 w-4" aria-label="RERA verified" />
+            <ShieldCheck className="h-4 w-4" aria-label="RERA registered" />
           </span>
         )}
         <span className="absolute bottom-2.5 right-2.5 inline-flex items-center gap-1 rounded-full bg-ink/60 px-2 py-0.5 text-[11px] font-medium text-on-primary backdrop-blur-sm">

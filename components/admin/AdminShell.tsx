@@ -4,7 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  BarChart3,
+  Building,
+  History,
+  Megaphone,
+  ClipboardCheck,
   ExternalLink,
+  FileText,
+  Handshake,
   Inbox,
   LayoutDashboard,
   LayoutList,
@@ -46,11 +53,23 @@ const adminNav: NavGroup[] = [
     items: [
       { href: "/admin/properties", label: "Properties", icon: LayoutList },
       { href: "/admin/properties/new", label: "Add Property", icon: Plus, exact: true },
+      { href: "/admin/quality", label: "Listing quality", icon: ClipboardCheck },
+      { href: "/admin/submissions", label: "Submissions", icon: Building },
     ],
   },
   {
     title: "Customers",
     items: [{ href: "/admin/leads", label: "Leads", icon: Inbox }],
+  },
+  {
+    title: "Growth",
+    items: [
+      { href: "/admin/partners", label: "Partners", icon: Handshake },
+      { href: "/admin/marketing", label: "Marketing drafts", icon: Megaphone },
+      { href: "/admin/content", label: "Content", icon: FileText },
+      { href: "/admin/reports", label: "Weekly report", icon: BarChart3 },
+      { href: "/admin/audit", label: "Audit log", icon: History },
+    ],
   },
 ];
 

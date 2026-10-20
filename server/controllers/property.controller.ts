@@ -1,6 +1,7 @@
 import "server-only";
 import { parsePropertyFilters } from "@/lib/utils/search-params";
 import { handle, json, readJson } from "../http";
+import { audit } from "../services/audit.service";
 import { requireAdmin } from "../services/auth.service";
 import * as propertyService from "../services/property.service";
 import { revalidatePublicPages } from "../services/revalidate.service";
@@ -27,6 +28,7 @@ export const create = handle(async (request: Request) => {
   const admin = await requireAdmin();
   const input = validatePropertyInput(await readJson(request));
   const property = await propertyService.createProperty(input, admin.id);
+  await audit(admin.id, "create", "property", property.id, property.title);
   revalidatePublicPages();
   return json({ property }, { status: 201 });
 });
@@ -60,38 +62,42 @@ export const getById = handle(async (_request: Request, { params }: IdContext) =
 
 /** PUT /api/properties/:id — admin, full update. Also publishes a draft. */
 export const update = handle(async (request: Request, { params }: IdContext) => {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const id = await propertyId(params);
   const input = validatePropertyInput(await readJson(request));
   const property = await propertyService.updateProperty(id, input);
+  await audit(admin.id, "update", "property", id, `${property.title} · ${input.verificationStatus} · ${input.availability}`);
   revalidatePublicPages();
   return json({ property });
 });
 
 /** PATCH /api/properties/:id/status  { isFeatured?, isActive? } — admin. */
 export const updateStatus = handle(async (request: Request, { params }: IdContext) => {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const id = await propertyId(params);
   const changes = validateStatusInput(await readJson(request));
   const property = await propertyService.setPropertyFlags(id, changes);
+  await audit(admin.id, "flags", "property", id, JSON.stringify(changes));
   revalidatePublicPages();
   return json({ property });
 });
 
 /** DELETE /api/properties/:id — admin, soft delete (sets isDeleted = true). */
 export const softDelete = handle(async (_request: Request, { params }: IdContext) => {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const id = await propertyId(params);
   const property = await propertyService.softDeleteProperty(id);
+  await audit(admin.id, "archive", "property", id, property.title);
   revalidatePublicPages();
   return json({ property });
 });
 
 /** POST /api/properties/:id/restore — admin, undoes a soft delete. */
 export const restore = handle(async (_request: Request, { params }: IdContext) => {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const id = await propertyId(params);
   const property = await propertyService.restoreProperty(id);
+  await audit(admin.id, "restore", "property", id, property.title);
   revalidatePublicPages();
   return json({ property });
 });

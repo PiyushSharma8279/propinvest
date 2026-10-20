@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import {
+  AlarmClock,
   ArrowRight,
   Building,
   Building2,
@@ -15,6 +16,7 @@ import {
   Star,
   Trash2,
 } from "lucide-react";
+import TodayPanel from "@/components/admin/TodayPanel";
 import { Badge } from "@/components/ui/Badge";
 import { LinkButton } from "@/components/ui/Button";
 import { categories, categoryLabels, type PropertyCategory } from "@/lib/constants/property";
@@ -26,7 +28,8 @@ import {
   getAdminCounts,
   listAdminProperties,
 } from "@/server/services/property.service";
-import { getLeadCounts } from "@/server/services/lead.service";
+import { getFollowUpCounts, getLeadCounts } from "@/server/services/lead.service";
+import { leadStatuses, leadStatusLabels } from "@/lib/constants/lead";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
@@ -37,13 +40,18 @@ const categoryIcons: Record<PropertyCategory, typeof Building> = {
 };
 
 export default async function AdminDashboardPage() {
-  const [counts, byCategory, cities, recent, leadCounts] = await Promise.all([
+  const [counts, byCategory, cities, recent, leadCounts, followUps] = await Promise.all([
     getAdminCounts(),
     getAdminCategoryCounts(),
     getAdminCities(),
     listAdminProperties({ view: "all", sort: "updated", dir: "desc", pageSize: 5 }),
     getLeadCounts(),
+    getFollowUpCounts(),
   ]);
+  // Share of all leads whose current status is this stage or a later one (Lost excluded).
+  const reached = (from: (typeof leadStatuses)[number]) =>
+    leadStatuses.slice(leadStatuses.indexOf(from), leadStatuses.indexOf("closed") + 1).reduce((sum, s) => sum + leadCounts[s], 0);
+  const pct = (n: number) => (leadCounts.all ? `${Math.round((n / leadCounts.all) * 100)}%` : "—");
 
   const stats = [
     { label: "Total listings", value: counts.all, icon: LayoutList, tone: "bg-primary-soft text-primary", href: "/admin/properties" },
@@ -68,7 +76,27 @@ export default async function AdminDashboardPage() {
         </LinkButton>
       </div>
 
-      {/* New leads */}
+      <TodayPanel />
+
+      {/* Follow-ups */}
+      <div className="grid gap-4 md:grid-cols-2">
+      <Link
+        href="/admin/leads?view=due"
+        className="group flex items-center gap-4 rounded-card border border-border bg-surface p-4 shadow-card transition hover:border-primary/40 hover:shadow-card-hover"
+      >
+        <span className={cn("grid h-11 w-11 shrink-0 place-items-center rounded-lg", followUps.overdue ? "bg-danger-soft text-danger" : "bg-primary-soft text-primary")}>
+          <AlarmClock className="h-5 w-5" aria-hidden="true" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold text-ink">
+            {followUps.due} {followUps.due === 1 ? "lead needs" : "leads need"} action today
+          </p>
+          <p className={cn("text-sm", followUps.overdue ? "font-medium text-danger" : "text-muted")}>
+            {followUps.overdue ? `${followUps.overdue} overdue` : "Nothing overdue"}
+          </p>
+        </div>
+        <ArrowRight className="h-4 w-4 text-muted group-hover:text-primary" aria-hidden="true" />
+      </Link>
       <Link
         href="/admin/leads?status=new"
         className="group flex items-center gap-4 rounded-card border border-border bg-surface p-4 shadow-card transition hover:border-primary/40 hover:shadow-card-hover"
@@ -84,6 +112,30 @@ export default async function AdminDashboardPage() {
         </div>
         <ArrowRight className="h-4 w-4 text-muted group-hover:text-primary" aria-hidden="true" />
       </Link>
+      </div>
+
+      {/* Lead funnel — all-time, from recorded statuses */}
+      <section className="rounded-card border border-border bg-surface p-5 shadow-card">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-base font-semibold text-ink">Lead pipeline</h2>
+          <Link href="/admin/reports" className="text-sm font-semibold text-primary hover:underline">
+            Weekly report
+          </Link>
+        </div>
+        <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          {leadStatuses.map((s) => (
+            <Link key={s} href={`/admin/leads?status=${s}`} className="rounded-lg border border-border p-3 hover:border-primary/40">
+              <dt className="text-xs text-muted">{leadStatusLabels[s]}</dt>
+              <dd className="text-xl font-bold tabular-nums text-ink">{leadCounts[s]}</dd>
+            </Link>
+          ))}
+        </dl>
+        <p className="mt-3 text-xs text-muted">
+          Of {leadCounts.all} leads, {pct(reached("qualified"))} are currently Qualified or further along,{" "}
+          {pct(reached("site_visit"))} at Site visit or Converted, and {pct(leadCounts.closed)} Converted. Based on the current
+          status of each lead (Lost leads are not counted as reaching any stage).
+        </p>
+      </section>
 
       {/* Stat tiles */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">

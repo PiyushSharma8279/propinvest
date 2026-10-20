@@ -9,7 +9,9 @@ import { cn } from "@/lib/utils/cn";
 const tone: Record<LeadStatus, string> = {
   new: "border-highlight bg-highlight-soft text-ink",
   contacted: "border-info/40 bg-info-soft text-info",
+  qualified: "border-info bg-info-soft text-info",
   site_visit: "border-primary/40 bg-primary-soft text-primary",
+  negotiation: "border-highlight bg-highlight-soft text-ink",
   closed: "border-primary bg-primary text-on-primary",
   not_interested: "border-border bg-surface-muted text-muted",
 };
@@ -26,7 +28,7 @@ export default function LeadStatusSelect({ id, status }: { id: number; status: L
     setSaving(true);
     try {
       await api(`/api/leads/${id}`, { method: "PATCH", body: { status: next } });
-      router.refresh(); // update the tab counts
+      router.refresh(); // update the tab counts and any auto-scheduled follow-up
     } catch {
       setValue(previous);
     } finally {

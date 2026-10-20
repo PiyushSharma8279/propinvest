@@ -1,1 +1,1 @@
-export { updateStatus as PATCH } from "@/server/controllers/lead.controller";
+export { update as PATCH } from "@/server/controllers/lead.controller";

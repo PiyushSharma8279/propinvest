@@ -2,6 +2,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import FloatingWhatsApp from "@/components/layout/FloatingWhatsApp";
 import GoogleAnalytics from "@/components/layout/GoogleAnalytics";
+import AttributionCapture from "@/components/layout/AttributionCapture";
 
 export default function SiteLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -11,6 +12,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
       <Footer />
       <FloatingWhatsApp />
       <GoogleAnalytics />
+      <AttributionCapture />
     </>
   );
 }

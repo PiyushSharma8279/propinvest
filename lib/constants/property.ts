@@ -171,3 +171,62 @@ export const monthNames = [
 
 /** Quick picks for the optional payment plan field; admins can also type their own (e.g. "20 into 5"). */
 export const paymentPlanPresets = ["20:80", "25:75", "10:90", "30:70", "40:60", "Construction Linked (CLP)", "Down Payment", "Possession Linked"];
+
+/**
+ * Whether the team has checked a listing's details against the builder's official documents
+ * (RERA portal entry, approved price list, brochure). Only "verified" is ever described as
+ * verified on the website.
+ */
+export const verificationStatuses = ["unverified", "verified", "needs_review"] as const;
+export type VerificationStatus = (typeof verificationStatuses)[number];
+
+export const verificationStatusLabels: Record<VerificationStatus, string> = {
+  unverified: "Not verified yet",
+  verified: "Verified",
+  needs_review: "Needs review",
+};
+
+/** A verified listing is flagged for re-checking after this many days. */
+export const VERIFICATION_STALE_DAYS = 90;
+
+/** Whether the property can still be bought. Unavailable listings drop off the public site. */
+export const availabilityStatuses = ["available", "unavailable"] as const;
+export type AvailabilityStatus = (typeof availabilityStatuses)[number];
+
+/** Availability should be reconfirmed with the owner / builder this often. */
+export const AVAILABILITY_STALE_DAYS = 30;
+
+/** Lifecycle shown in the admin panel, derived from the listing's existing flags. */
+export type ListingStage =
+  | "draft"
+  | "pending_verification"
+  | "approved"
+  | "published"
+  | "published_unverified"
+  | "unavailable"
+  | "archived";
+
+export const listingStageLabels: Record<ListingStage, string> = {
+  draft: "Draft",
+  pending_verification: "Pending verification",
+  approved: "Approved (not live)",
+  published: "Published",
+  published_unverified: "Published — verification pending",
+  unavailable: "Unavailable",
+  archived: "Archived",
+};
+
+export function listingStage(p: {
+  isDeleted: boolean;
+  isDraft: boolean;
+  isActive: boolean;
+  availability: string;
+  verificationStatus: string;
+}): ListingStage {
+  if (p.isDeleted) return "archived";
+  if (p.isDraft) return "draft";
+  if (p.availability === "unavailable") return "unavailable";
+  const verified = p.verificationStatus === "verified";
+  if (p.isActive) return verified ? "published" : "published_unverified";
+  return verified ? "approved" : "pending_verification";
+}

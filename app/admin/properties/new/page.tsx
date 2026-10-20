@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import PropertyForm from "@/components/admin/PropertyForm";
+import { getPartnerOptions } from "@/server/services/partner.service";
 import { categories, type PropertyCategory } from "@/lib/constants/property";
 
 export const metadata: Metadata = { title: "Add property" };
@@ -14,7 +15,7 @@ export default async function NewPropertyPage({
 
   return (
     <div className="mx-auto max-w-4xl">
-      <PropertyForm title="Add property" defaultCategory={defaultCategory} />
+      <PropertyForm title="Add property" defaultCategory={defaultCategory} partners={await getPartnerOptions()} />
     </div>
   );
 }

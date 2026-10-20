@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ExternalLink } from "lucide-react";
 import PropertyForm from "@/components/admin/PropertyForm";
+import { getPartnerOptions } from "@/server/services/partner.service";
 import { HttpError } from "@/server/http";
 import { getPropertyById } from "@/server/services/property.service";
 
@@ -20,6 +21,7 @@ export default async function EditPropertyPage({ params }: { params: Promise<{ i
   return (
     <div className="mx-auto max-w-4xl">
       <PropertyForm
+        partners={await getPartnerOptions()}
         property={property}
         title={property.isDraft ? `Draft: ${property.title}` : `Edit ${property.title}`}
         headerExtra={

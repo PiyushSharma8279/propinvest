@@ -7,12 +7,14 @@ import Logo from "./Logo";
 const exploreLinks = [
   { href: "/projects", label: "All Projects" },
   { href: "/about", label: "About Us" },
+  { href: "/list-your-property", label: "List Your Property" },
+  { href: "/privacy", label: "Privacy Policy" },
   { href: "/projects?category=Residential", label: "Residential" },
   { href: "/projects?category=Commercial", label: "Commercial" },
   { href: "/projects?category=Plot", label: "Plots & Land" },
   { href: "/projects?possession=ready+to+move", label: "Ready to Move" },
   { href: "/projects?possession=new+launch", label: "New Launches" },
-  { href: "/projects?rera=true", label: "RERA Verified Only" },
+  { href: "/projects?rera=true", label: "RERA Registered Only" },
 ];
 
 const headingClass = "text-sm font-semibold text-ink";

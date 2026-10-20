@@ -10,6 +10,7 @@ import {
   Compass,
   FileCheck2,
   Home,
+  Info,
   KeyRound,
   LandPlot,
   Maximize2,
@@ -33,6 +34,7 @@ import PropertyCard, { statusStyles } from "@/components/property/PropertyCard";
 import { LaunchOfferPanel, offerSummary } from "@/components/property/LaunchOffer";
 import PropertyGallery from "@/components/property/PropertyGallery";
 import PropertyLocation from "@/components/property/PropertyLocation";
+import PropertyViewTracker from "@/components/property/PropertyViewTracker";
 import RERABadge from "@/components/property/RERABadge";
 import ShareButton from "@/components/property/ShareButton";
 import { buttonClass } from "@/components/ui/Button";
@@ -113,6 +115,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     twitter: { card: "summary_large_image", title: shareTitle, description },
   };
+}
+
+/** Says plainly whether the team has checked this listing, and when. */
+function VerificationNote({ property }: { property: Property }) {
+  const verified = property.verificationStatus === "verified" && property.lastVerifiedAt;
+  return (
+    <p className="mt-3 flex items-start gap-1.5 text-xs text-muted">
+      <Info className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+      {verified
+        ? `Details checked by our team against builder documents on ${property.lastVerifiedAt!.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Kolkata" })}. Prices and availability can change — confirm with the builder before booking.`
+        : "Details as provided by the builder or partner. Prices and availability can change — please verify independently, including RERA registration on the state portal, before booking."}
+    </p>
+  );
 }
 
 /** White rounded section card used for every block in the main column. */
@@ -220,7 +235,7 @@ export default async function ProjectDetailPage({ params }: Props) {
         "@type": "Offer",
         priceCurrency: "INR",
         price: property.priceMin,
-        availability: "https://schema.org/InStock",
+        // No availability: unit availability isn't tracked, so it isn't claimed.
       },
     }),
   };
@@ -230,6 +245,7 @@ export default async function ProjectDetailPage({ params }: Props) {
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 pb-28 sm:px-6 lg:pb-10">
       <JsonLd data={listingJsonLd} />
+      <PropertyViewTracker projectName={property.title} city={property.city} category={property.category} />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link href={cityHref} className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline">
@@ -288,6 +304,7 @@ export default async function ProjectDetailPage({ params }: Props) {
             </div>
             {property.builder && <p className="mt-1 text-sm text-muted">by {property.builder}</p>}
             <LaunchOfferPanel property={property} />
+            <VerificationNote property={property} />
             {property.paymentPlan && (
               <p className="mt-4 flex flex-wrap items-center gap-2 text-sm text-muted">
                 <span className="inline-flex items-center gap-1.5 font-medium text-ink">

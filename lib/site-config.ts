@@ -1,9 +1,9 @@
 export const siteConfig = {
   name: "InvestsProperty",
   byline: "by Maa Rudrani Properties",
-  tagline: "Real estate, verified.",
+  tagline: "Real estate, thoughtfully listed.",
   description:
-    "Find RERA-verified residential and commercial projects across India. Compare prices, book site visits, and talk directly to project teams on InvestsProperty.",
+    "Explore residential and commercial property listings across India. Compare available details, enquire about properties, and contact project teams on InvestsProperty.",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://investsproperty.com",
   ogImage: "/og-image.png",
   locale: "en_IN",
@@ -11,7 +11,7 @@ export const siteConfig = {
     "real estate India",
     "new projects Noida",
     "residential projects",
-    "RERA verified projects",
+    "RERA property details",
     "property investment India",
     "buy flats apartments",
   ],

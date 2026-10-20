@@ -92,7 +92,7 @@ export default function Header() {
               {siteConfig.contact.email}
             </a>
           </div>
-          <p className="hidden md:block">RERA-verified listings only</p>
+          <p className="hidden md:block">Property listings for your review</p>
         </div>
       </div>
 

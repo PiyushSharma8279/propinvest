@@ -17,9 +17,8 @@ export const metadata: Metadata = {
   keywords: [...siteConfig.keywords],
   authors: [{ name: siteConfig.name }],
   creator: siteConfig.name,
-  alternates: {
-    canonical: "/",
-  },
+  // No site-wide canonical: each indexable page sets its own. A "/" default here would be
+  // inherited by every page that forgets to, telling search engines they duplicate the homepage.
   openGraph: {
     type: "website",
     locale: siteConfig.locale,
